@@ -9,8 +9,8 @@ from typing import Any, Dict, List
 import requests
 
 from .base import Retriever
-from ..config import get_bohrium_output_dir
-from ..schema import normalize_result, SearchResult
+from ..core.config import get_bohrium_output_dir
+from ..models.schema import normalize_result, SearchResult
 
 
 def _import_bohrium_utils():
@@ -19,7 +19,7 @@ def _import_bohrium_utils():
     """
     try:
         # Add database directory to path if needed
-        project_root = Path(__file__).parent.parent.parent
+        project_root = Path(__file__).parent.parent
         database_path = project_root / "database"
         if str(database_path) not in sys.path:
             sys.path.insert(0, str(database_path))

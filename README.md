@@ -49,9 +49,6 @@ pip install bohr-agent-sdk
 # 使用 uv 运行主服务器
 uv run python -m mrdice_server.server
 
-# 使用 uv 运行调试服务器（FastAPI）
-uv run uvicorn mrdice_server.debug_server:app --reload --host 0.0.0.0 --port 50001
-
 # 或激活虚拟环境后直接运行
 source .venv/bin/activate  # Linux/macOS
 # 或
@@ -117,17 +114,35 @@ MR_DICE_BOHRIUM_OUTPUT_DIR=
 
 ```
 mrdice_server/
-├── server.py          # MCP 服务器主入口
-├── debug_server.py    # FastAPI 调试服务器
-├── config.py          # 配置管理
-├── llm_client.py      # LLM 客户端
-├── llm_expand.py      # 查询扩展
-├── ranker.py          # 结果排序
-├── router.py          # 路由规划
-├── schema.py          # 数据模型
-└── retrievers/        # 检索器实现
-    ├── base.py
-    └── bohriumpublic.py
+├── server.py          # 主入口点（向后兼容）
+├── core/              # 核心模块
+│   ├── server.py      # MCP 服务器实现
+│   ├── config.py      # 配置管理
+│   ├── llm_client.py  # LLM 客户端
+│   ├── preprocessor.py # 预处理：意图识别、参数拼接、参数矫正
+│   ├── postprocessor.py # 后处理：错误分类、降级策略
+│   ├── logger.py      # 日志管理
+│   └── error.py       # 报错管理
+├── search/            # 搜索相关
+│   ├── searcher.py    # 并行数据库搜索
+│   ├── router.py      # 路由规划和数据库选择
+│   └── ranker.py      # 结果排序
+├── models/            # 数据模型
+│   └── schema.py      # 数据模型定义
+├── retrievers/        # 检索器实现
+│   ├── base.py        # 检索器基类
+│   └── bohriumpublic.py # Bohrium 检索器
+└── database/          # 数据库实现
+    ├── bohriumpublic_database/
+    ├── mofdbsql_database/
+    ├── openlam_database/
+    └── optimade_database/
+
+tests/                  # 测试文件
+├── test_llm_simple.py # LLM 测试脚本
+├── test_llm.py        # LLM 测试（完整版）
+├── test_mrdice_example.py # 示例测试脚本
+└── test.json          # 测试用例配置
 ```
 
 ### 开发

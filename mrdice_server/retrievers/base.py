@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Protocol
 
-from ..schema import SearchResult
+from ..models.schema import SearchResult
 
 
 class Retriever(Protocol):
