@@ -38,6 +38,7 @@ env/
 .env
 .env.local
 .env.*.local
+database/**/.env
 
 # Logs
 *.log
