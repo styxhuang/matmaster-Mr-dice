@@ -1,0 +1,13 @@
+{
+  "filters": {
+    "sql": "WITH ranked_mofs AS (\n            SELECT \n                name, database, surface_area_m2g, void_fraction, n_atom,\n                ROW_NUMBER() OVER (PARTITION BY database ORDER BY surface_area_m2g DESC) as sa_rank,\n                COUNT(*) OVER (PARTITION BY database) as total_count,\n                (surface_area_m2g * void_fraction / n_atom) as efficiency_score\n            FROM mofs \n            WHERE surface_area_m2g IS NOT NULL AND void_fraction IS NOT NULL AND n_atom > 0\n        )\n        SELECT \n            name, database, surface_area_m2g, void_fraction, efficiency_score,\n            sa_rank, total_count, (sa_rank * 100.0 / total_count) as percentile\n        FROM ranked_mofs\n        WHERE sa_rank <= total_count * 0.05 AND void_fraction > 0.5\n        ORDER BY efficiency_score DESC LIMIT 10",
+    "n_results": 10
+  },
+  "n_found": 10,
+  "formats": [
+    "cif",
+    "json"
+  ],
+  "output_dir": "materials_data_mofdb/sql_query_20251020_153634_2a336494",
+  "warnings": []
+}

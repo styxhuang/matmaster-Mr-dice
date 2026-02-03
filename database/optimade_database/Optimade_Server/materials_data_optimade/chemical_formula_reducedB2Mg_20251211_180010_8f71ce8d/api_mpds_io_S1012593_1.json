@@ -1,0 +1,38 @@
+{
+  "id": "S1012593",
+  "type": "structures",
+  "links": {
+    "self": "https://api.mpds.io/v1/structures/S1012593",
+    "_mpds_entry": "mpds://entry/S1012593",
+    "_mpds_source_article_ref": "https://api.mpds.io/v0/download/bib?ref_id=175920",
+    "_mpds_formats": {
+      "bib": "https://api.mpds.io/v0/download/s?q=S1012593&fmt=bib",
+      "pdf": "https://api.mpds.io/v0/download/s?q=S1012593&fmt=pdf",
+      "cif": "https://api.mpds.io/v0/download/s?q=S1012593&fmt=cif",
+      "inp": "https://api.mpds.io/v0/download/s?q=S1012593&fmt=inp",
+      "json": "https://api.mpds.io/v0/download/s?q=S1012593&fmt=json",
+      "png": "https://api.mpds.io/v0/download/s?q=S1012593&fmt=png",
+      "gif": "https://api.mpds.io/v0/download/s?q=S1012593&fmt=gif"
+    }
+  },
+  "attributes": {
+    "immutable_id": "S1012593",
+    "last_modified": null,
+    "elements": [],
+    "nelements": null,
+    "chemical_formula_reduced": "MgB2",
+    "chemical_formula_anonymous": "A2B",
+    "dimension_types": [
+      1,
+      1,
+      1
+    ],
+    "nperiodic_dimensions": 3,
+    "lattice_vectors": [],
+    "_mpds_source_article_id": 175920,
+    "_mpds_data_type": "peer-reviewed",
+    "_mpds_open_data": false,
+    "_mpds_data_license": "commercial: www.mpds.io/products",
+    "_mpds_warning": "anonymous access: omitted fields"
+  }
+}

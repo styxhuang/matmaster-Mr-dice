@@ -1,0 +1,24 @@
+{
+  "filters": {
+    "sql": "WITH element_compositions AS (\n            SELECT \n                m.id, m.name, m.database, m.n_atom, m.surface_area_m2g,\n                GROUP_CONCAT(e.element_symbol || ':' || e.n_atom) as composition\n            FROM mofs m\n            JOIN elements e ON m.id = e.mof_id\n            GROUP BY m.id, m.name, m.database, m.n_atom, m.surface_area_m2g\n        )\n        SELECT \n            m1.name as mof1_name, m1.database as mof1_db, m1.n_atom as mof1_atoms, m1.surface_area_m2g as mof1_sa,\n            m2.name as mof2_name, m2.database as mof2_db, m2.n_atom as mof2_atoms, m2.surface_area_m2g as mof2_sa,\n            ABS(m1.n_atom - m2.n_atom) * 100.0 / ((m1.n_atom + m2.n_atom) / 2) as atom_diff_percent,\n            ABS(m1.surface_area_m2g - m2.surface_area_m2g) * 100.0 / ((m1.surface_area_m2g + m2.surface_area_m2g) / 2) as sa_diff_percent\n        FROM element_compositions m1\n        JOIN element_compositions m2 ON m1.id < m2.id\n        WHERE m1.composition = m2.composition\n          AND ABS(m1.n_atom - m2.n_atom) * 100.0 / ((m1.n_atom + m2.n_atom) / 2) < 10\n          AND ABS(m1.surface_area_m2g - m2.surface_area_m2g) * 100.0 / ((m1.surface_area_m2g + m2.surface_area_m2g) / 2) > 50\n        ORDER BY sa_diff_percent DESC LIMIT 10",
+    "n_results": 10
+  },
+  "n_found": 10,
+  "formats": [
+    "cif",
+    "json"
+  ],
+  "output_dir": "materials_data_mofdb/sql_query_20251010_234248_3d7e09e1",
+  "warnings": [
+    "Result 0 (idx0): User requested CIF format but no cif_path found in query result",
+    "Result 1 (idx1): User requested CIF format but no cif_path found in query result",
+    "Result 2 (idx2): User requested CIF format but no cif_path found in query result",
+    "Result 3 (idx3): User requested CIF format but no cif_path found in query result",
+    "Result 4 (idx4): User requested CIF format but no cif_path found in query result",
+    "Result 5 (idx5): User requested CIF format but no cif_path found in query result",
+    "Result 6 (idx6): User requested CIF format but no cif_path found in query result",
+    "Result 7 (idx7): User requested CIF format but no cif_path found in query result",
+    "Result 8 (idx8): User requested CIF format but no cif_path found in query result",
+    "Result 9 (idx9): User requested CIF format but no cif_path found in query result"
+  ]
+}

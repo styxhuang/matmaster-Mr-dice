@@ -1,0 +1,51 @@
+{
+  "mode": "band_gap",
+  "base_filter": "elements HAS ALL \"O\" AND nelements = 2",
+  "band_gap_min": 2.0,
+  "band_gap_max": null,
+  "providers_requested": [
+    "alexandria",
+    "oqmd"
+  ],
+  "providers_seen": [
+    "alexandria_icams_rub_de_pbe",
+    "alexandria_icams_rub_de_pbesol"
+  ],
+  "files": [
+    "materials_data_optimade/elements_HAS_ALL_O_AND_nelemen_20260105_105819_8eb7a6ea/alexandria_icams_rub_de_pbe_agm071218531_0.cif",
+    "materials_data_optimade/elements_HAS_ALL_O_AND_nelemen_20260105_105819_8eb7a6ea/alexandria_icams_rub_de_pbe_agm003127981_1.cif",
+    "materials_data_optimade/elements_HAS_ALL_O_AND_nelemen_20260105_105819_8eb7a6ea/alexandria_icams_rub_de_pbesol_agm003247494_0.cif",
+    "materials_data_optimade/elements_HAS_ALL_O_AND_nelemen_20260105_105819_8eb7a6ea/alexandria_icams_rub_de_pbe_agm071218531_0.json",
+    "materials_data_optimade/elements_HAS_ALL_O_AND_nelemen_20260105_105819_8eb7a6ea/alexandria_icams_rub_de_pbe_agm003127981_1.json",
+    "materials_data_optimade/elements_HAS_ALL_O_AND_nelemen_20260105_105819_8eb7a6ea/alexandria_icams_rub_de_pbesol_agm003247494_0.json"
+  ],
+  "warnings": [],
+  "format": [
+    "cif",
+    "json"
+  ],
+  "n_results": 3,
+  "stats": {
+    "(elements HAS ALL \"O\" AND nelements = 2) AND (_alexandria_band_gap>=2.0)": {
+      "https://alexandria.icams.rub.de/pbe": 20,
+      "https://alexandria.icams.rub.de/pbesol": 20
+    },
+    "(elements HAS ALL \"O\" AND nelements = 2) AND (_oqmd_band_gap>=2.0)": {
+      "https://oqmd.org/optimade/": 0
+    }
+  },
+  "plan": {
+    "(elements HAS ALL \"O\" AND nelements = 2) AND (_alexandria_band_gap>=2.0)": {
+      "https://alexandria.icams.rub.de/pbe": 2,
+      "https://alexandria.icams.rub.de/pbesol": 1
+    },
+    "(elements HAS ALL \"O\" AND nelements = 2) AND (_oqmd_band_gap>=2.0)": {
+      "https://oqmd.org/optimade/": 0
+    }
+  },
+  "per_provider_filters": {
+    "alexandria": "(elements HAS ALL \"O\" AND nelements = 2) AND (_alexandria_band_gap>=2.0)",
+    "oqmd": "(elements HAS ALL \"O\" AND nelements = 2) AND (_oqmd_band_gap>=2.0)"
+  },
+  "n_found": 3
+}

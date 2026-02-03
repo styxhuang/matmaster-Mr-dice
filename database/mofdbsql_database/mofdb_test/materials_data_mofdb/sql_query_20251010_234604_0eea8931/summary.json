@@ -1,0 +1,13 @@
+{
+  "filters": {
+    "sql": "WITH efficiency_ranking AS (\n            SELECT \n                name, database, n_atom, surface_area_m2g, void_fraction, pld, lcd,\n                (surface_area_m2g * void_fraction) as pore_efficiency,\n                ROW_NUMBER() OVER (PARTITION BY database ORDER BY (surface_area_m2g * void_fraction) DESC) as efficiency_rank,\n                COUNT(*) OVER (PARTITION BY database) as total_count,\n                AVG(n_atom) OVER (PARTITION BY database) as db_avg_atoms,\n                MIN(n_atom) OVER (PARTITION BY database) as db_min_atoms,\n                MAX(n_atom) OVER (PARTITION BY database) as db_max_atoms\n            FROM mofs \n            WHERE surface_area_m2g IS NOT NULL AND void_fraction IS NOT NULL AND n_atom IS NOT NULL\n        )\n        SELECT \n            name, database, n_atom, surface_area_m2g, void_fraction, pore_efficiency,\n            efficiency_rank, total_count,\n            (efficiency_rank * 100.0 / total_count) as percentile,\n            (pore_efficiency / n_atom) as efficiency_per_atom\n        FROM efficiency_ranking\n        WHERE efficiency_rank <= total_count * 0.1\n          AND n_atom BETWEEN db_min_atoms AND db_max_atoms\n        ORDER BY efficiency_per_atom DESC LIMIT 10",
+    "n_results": 10
+  },
+  "n_found": 10,
+  "formats": [
+    "cif",
+    "json"
+  ],
+  "output_dir": "materials_data_mofdb/sql_query_20251010_234604_0eea8931",
+  "warnings": []
+}

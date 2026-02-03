@@ -1,0 +1,10 @@
+{
+  "database": "Tobacco",
+  "total_mofs": 13511,
+  "avg_void_fraction": 0.8799822366960255,
+  "min_void_fraction": 0.0,
+  "max_void_fraction": 0.99,
+  "avg_surface_area": 5464.378580415957,
+  "high_porosity_count": 13215,
+  "high_porosity_percentage": 97.81
+}

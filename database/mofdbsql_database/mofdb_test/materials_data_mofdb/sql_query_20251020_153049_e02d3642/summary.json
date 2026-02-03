@@ -1,0 +1,18 @@
+{
+  "filters": {
+    "sql": "SELECT m.*, m.cif_path \n    FROM mofs m \n    WHERE m.cif_path IS NOT NULL LIMIT 2",
+    "n_results": 2
+  },
+  "n_found": 2,
+  "formats": [
+    "cif",
+    "json"
+  ],
+  "output_dir": "materials_data_mofdb/sql_query_20251020_153049_e02d3642",
+  "warnings": [
+    "Source file not found: /home/MOF_SQL_test/data/original/hmof/hMOF-6.cif for hMOF-6",
+    "Source file not found: /home/MOF_SQL_test/data/original/hmof/hMOF-6.json for hMOF-6",
+    "Source file not found: /home/MOF_SQL_test/data/original/hmof/hMOF-0.cif for hMOF-0",
+    "Source file not found: /home/MOF_SQL_test/data/original/hmof/hMOF-0.json for hMOF-0"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "formula": null,
+  "n_results": 10,
+  "filters": {
+    "min_energy": 100.0,
+    "max_energy": null,
+    "min_submission_time": null,
+    "max_submission_time": null
+  },
+  "n_found": 10,
+  "formats": [
+    "cif"
+  ],
+  "output_dir": "materials_data_openlam/emin100.00_20260113_173439_f409de67"
+}

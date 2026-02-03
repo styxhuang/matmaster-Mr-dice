@@ -1,0 +1,19 @@
+{
+  "filters": {
+    "sql": "SELECT \n        m.database,\n        COUNT(*) as total_mofs,\n        AVG(m.void_fraction) as avg_void_fraction,\n        MIN(m.void_fraction) as min_void_fraction,\n        MAX(m.void_fraction) as max_void_fraction,\n        AVG(m.surface_area_m2g) as avg_surface_area,\n        COUNT(CASE WHEN m.void_fraction > 0.5 THEN 1 END) as high_porosity_count,\n        ROUND(COUNT(CASE WHEN m.void_fraction > 0.5 THEN 1 END) * 100.0 / COUNT(*), 2) as high_porosity_percentage\n    FROM mofs m \n    WHERE m.void_fraction IS NOT NULL AND m.surface_area_m2g IS NOT NULL\n    GROUP BY m.database\n    ORDER BY total_mofs DESC LIMIT 5",
+    "n_results": 5
+  },
+  "n_found": 5,
+  "formats": [
+    "cif",
+    "json"
+  ],
+  "output_dir": "materials_data_mofdb/sql_query_20251020_153311_d6d04a14",
+  "warnings": [
+    "Result 0 (idx0): User requested CIF format but no cif_path found in query result",
+    "Result 1 (idx1): User requested CIF format but no cif_path found in query result",
+    "Result 2 (idx2): User requested CIF format but no cif_path found in query result",
+    "Result 3 (idx3): User requested CIF format but no cif_path found in query result",
+    "Result 4 (idx4): User requested CIF format but no cif_path found in query result"
+  ]
+}

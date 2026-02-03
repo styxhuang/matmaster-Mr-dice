@@ -1,0 +1,82 @@
+{
+  "mode": "raw_filter",
+  "filter": "chemical_formula_reduced=\"B2Mg\"",
+  "providers_requested": [
+    "alexandria",
+    "cmr",
+    "cod",
+    "mp",
+    "mpdd",
+    "mpds",
+    "nmd",
+    "odbx",
+    "omdb",
+    "oqmd",
+    "tcod",
+    "twodmatpedia"
+  ],
+  "providers_seen": [
+    "api_mpds_io"
+  ],
+  "files": [
+    "materials_data_optimade/chemical_formula_reducedB2Mg_20251211_180010_8f71ce8d/api_mpds_io_S530410_0.json",
+    "materials_data_optimade/chemical_formula_reducedB2Mg_20251211_180010_8f71ce8d/api_mpds_io_S1012593_1.json"
+  ],
+  "warnings": [
+    "Failed to save structure from api_mpds_io #S530410: 'species_at_sites'",
+    "Failed to save structure from api_mpds_io #S1012593: 'species_at_sites'",
+    "Failed to save structure from api_mpds_io #S1020634: 'species_at_sites'",
+    "Failed to save structure from api_mpds_io #S1020635: 'species_at_sites'",
+    "Failed to save structure from api_mpds_io #S1020636: 'species_at_sites'",
+    "Failed to save structure from api_mpds_io #S1020637: 'species_at_sites'",
+    "Failed to save structure from api_mpds_io #S1020638: 'species_at_sites'",
+    "Failed to save structure from api_mpds_io #S1020639: 'species_at_sites'",
+    "Failed to save structure from api_mpds_io #S1020640: 'species_at_sites'",
+    "Failed to save structure from api_mpds_io #S1020641: 'species_at_sites'",
+    "[save] underfilled quota for api_mpds_io @ https://api.mpds.io/: wanted 2, saved 0"
+  ],
+  "format": [
+    "cif",
+    "json"
+  ],
+  "n_results": 2,
+  "stats": {
+    "chemical_formula_reduced=\"B2Mg\"": {
+      "https://api.mpds.io/": 10,
+      "https://oqmd.org/optimade/": 0,
+      "https://optimade.odbx.science/": 0,
+      "https://optimade-misc.odbx.science/": 1,
+      "https://optimade-gnome.odbx.science/": 0,
+      "https://optimade.materialsproject.org/": 0,
+      "https://www.crystallography.net/tcod/optimade": 0,
+      "https://cmr-optimade.fysik.dtu.dk/": 0,
+      "http://optimade.2dmatpedia.org/": 0,
+      "https://nomad-lab.eu/prod/rae/optimade/": 20,
+      "https://www.crystallography.net/cod/optimade": 0,
+      "http://optimade.openmaterialsdb.se/": 1,
+      "https://alexandria.icams.rub.de/pbe": 8,
+      "https://alexandria.icams.rub.de/pbesol": 1,
+      "http://mpddoptimade.phaseslab.org/": 20
+    }
+  },
+  "plan": {
+    "chemical_formula_reduced=\"B2Mg\"": {
+      "https://api.mpds.io/": 2,
+      "https://oqmd.org/optimade/": 0,
+      "https://optimade.odbx.science/": 0,
+      "https://optimade-misc.odbx.science/": 0,
+      "https://optimade-gnome.odbx.science/": 0,
+      "https://optimade.materialsproject.org/": 0,
+      "https://www.crystallography.net/tcod/optimade": 0,
+      "https://cmr-optimade.fysik.dtu.dk/": 0,
+      "http://optimade.2dmatpedia.org/": 0,
+      "https://nomad-lab.eu/prod/rae/optimade/": 0,
+      "https://www.crystallography.net/cod/optimade": 0,
+      "http://optimade.openmaterialsdb.se/": 0,
+      "https://alexandria.icams.rub.de/pbe": 0,
+      "https://alexandria.icams.rub.de/pbesol": 0,
+      "http://mpddoptimade.phaseslab.org/": 0
+    }
+  },
+  "n_found": 0
+}

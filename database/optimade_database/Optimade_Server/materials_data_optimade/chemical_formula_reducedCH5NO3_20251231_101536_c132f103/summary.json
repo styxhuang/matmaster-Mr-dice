@@ -1,0 +1,95 @@
+{
+  "mode": "raw_filter",
+  "filter": "chemical_formula_reduced=\"CH5NO3\"",
+  "providers_requested": [
+    "alexandria",
+    "cmr",
+    "cod",
+    "mp",
+    "mpdd",
+    "mpds",
+    "nmd",
+    "odbx",
+    "omdb",
+    "oqmd",
+    "tcod",
+    "twodmatpedia"
+  ],
+  "providers_seen": [
+    "oqmd_org_optimade",
+    "api_mpds_io",
+    "mpddoptimade_phaseslab_org",
+    "optimade_materialsproject_org",
+    "alexandria_icams_rub_de_pbe",
+    "alexandria_icams_rub_de_pbesol"
+  ],
+  "files": [
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/oqmd_org_optimade_5848135_0.cif",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/oqmd_org_optimade_6300713_1.cif",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/oqmd_org_optimade_5848135_0.json",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/oqmd_org_optimade_6300713_1.json",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/api_mpds_io_S1040189_0.json",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/api_mpds_io_S1715159_1.json",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/mpddoptimade_phaseslab_org_mpdd-6075b69db003796270f56b30_0.cif",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/mpddoptimade_phaseslab_org_mpdd-60da61ef462eba2707a95d2b_1.cif",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/mpddoptimade_phaseslab_org_mpdd-60dc0c71462eba2707c56f3c_2.cif",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/mpddoptimade_phaseslab_org_mpdd-6075b69db003796270f56b30_0.json",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/mpddoptimade_phaseslab_org_mpdd-60da61ef462eba2707a95d2b_1.json",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/mpddoptimade_phaseslab_org_mpdd-60dc0c71462eba2707c56f3c_2.json",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/optimade_materialsproject_org_mp-560121_0.cif",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/optimade_materialsproject_org_mp-560121_0.json",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/alexandria_icams_rub_de_pbe_agm003279748_0.cif",
+    "materials_data_optimade/chemical_formula_reducedCH5NO3_20251231_101536_c132f103/alexandria_icams_rub_de_pbe_agm003279748_0.json"
+  ],
+  "warnings": [
+    "Failed to save structure from api_mpds_io #S1040189: 'species_at_sites'",
+    "Failed to save structure from api_mpds_io #S1715159: 'species_at_sites'",
+    "[save] underfilled quota for api_mpds_io @ https://api.mpds.io/: wanted 2, saved 0",
+    "[save] underfilled quota for alexandria_icams_rub_de_pbesol @ https://alexandria.icams.rub.de/pbesol: wanted 1, saved 0",
+    "[save] underfilled quota for alexandria_icams_rub_de_pbesol @ https://alexandria.icams.rub.de/pbesol: wanted 1, saved 0"
+  ],
+  "format": [
+    "cif",
+    "json"
+  ],
+  "n_results": 10,
+  "stats": {
+    "chemical_formula_reduced=\"CH5NO3\"": {
+      "https://oqmd.org/optimade/": 2,
+      "https://nomad-lab.eu/prod/rae/optimade/": 0,
+      "http://optimade.2dmatpedia.org/": 0,
+      "https://www.crystallography.net/cod/optimade": 0,
+      "https://optimade.odbx.science/": 0,
+      "https://optimade-misc.odbx.science/": 0,
+      "https://optimade-gnome.odbx.science/": 0,
+      "https://www.crystallography.net/tcod/optimade": 0,
+      "https://api.mpds.io/": 2,
+      "http://optimade.openmaterialsdb.se/": 0,
+      "http://mpddoptimade.phaseslab.org/": 3,
+      "https://optimade.materialsproject.org/": 1,
+      "https://cmr-optimade.fysik.dtu.dk/": 0,
+      "https://alexandria.icams.rub.de/pbe": 1,
+      "https://alexandria.icams.rub.de/pbesol": 1
+    }
+  },
+  "plan": {
+    "chemical_formula_reduced=\"CH5NO3\"": {
+      "https://oqmd.org/optimade/": 2,
+      "https://nomad-lab.eu/prod/rae/optimade/": 0,
+      "http://optimade.2dmatpedia.org/": 0,
+      "https://www.crystallography.net/cod/optimade": 0,
+      "https://optimade.odbx.science/": 0,
+      "https://optimade-misc.odbx.science/": 0,
+      "https://optimade-gnome.odbx.science/": 0,
+      "https://www.crystallography.net/tcod/optimade": 0,
+      "https://api.mpds.io/": 2,
+      "http://optimade.openmaterialsdb.se/": 0,
+      "http://mpddoptimade.phaseslab.org/": 3,
+      "https://optimade.materialsproject.org/": 1,
+      "https://cmr-optimade.fysik.dtu.dk/": 0,
+      "https://alexandria.icams.rub.de/pbe": 1,
+      "https://alexandria.icams.rub.de/pbesol": 1
+    }
+  },
+  "n_found": 7
+}

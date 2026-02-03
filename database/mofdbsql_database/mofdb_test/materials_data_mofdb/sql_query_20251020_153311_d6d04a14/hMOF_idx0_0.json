@@ -1,0 +1,10 @@
+{
+  "database": "hMOF",
+  "total_mofs": 137953,
+  "avg_void_fraction": 0.6205187893660286,
+  "min_void_fraction": 0.0,
+  "max_void_fraction": 0.967008,
+  "avg_surface_area": 2593.072373924452,
+  "high_porosity_count": 103613,
+  "high_porosity_percentage": 75.11
+}

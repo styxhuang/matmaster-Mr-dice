@@ -1,0 +1,288 @@
+{
+  "id": "agm005267334",
+  "type": "structures",
+  "attributes": {
+    "immutable_id": "agm005267334",
+    "last_modified": "2023-11-16T06:57:59Z",
+    "elements": [
+      "O",
+      "Ti"
+    ],
+    "nelements": 2,
+    "elements_ratios": [
+      0.6666666666666666,
+      0.3333333333333333
+    ],
+    "chemical_formula_descriptive": "Ti4 O8",
+    "chemical_formula_reduced": "O2Ti",
+    "chemical_formula_hill": null,
+    "chemical_formula_anonymous": "A2B",
+    "dimension_types": [
+      1,
+      1,
+      1
+    ],
+    "nperiodic_dimensions": 3,
+    "lattice_vectors": [
+      [
+        2.98183885,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        4.97228754,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        9.53184136
+      ]
+    ],
+    "cartesian_site_positions": [
+      [
+        0.7454597125,
+        2.8848116414906184,
+        6.078134202854995
+      ],
+      [
+        2.2363791375,
+        2.0874758985093815,
+        3.4537071571450046
+      ],
+      [
+        2.2363791375,
+        0.39866787149061844,
+        8.219627837145005
+      ],
+      [
+        0.7454597125,
+        4.573619668509382,
+        1.3122135228549952
+      ],
+      [
+        0.7454597125,
+        1.472904440275158,
+        4.48151569787879
+      ],
+      [
+        2.2363791375,
+        3.499383099724842,
+        5.050325662121209
+      ],
+      [
+        2.2363791375,
+        3.959048210275158,
+        0.28440498212120957
+      ],
+      [
+        0.7454597125,
+        1.0132393297248419,
+        9.24743637787879
+      ],
+      [
+        0.7454597125,
+        3.148603777037842,
+        2.540761403491004
+      ],
+      [
+        2.2363791375,
+        1.8236837629621576,
+        6.9910799565089965
+      ],
+      [
+        2.2363791375,
+        0.6624600070378422,
+        2.225159276508996
+      ],
+      [
+        0.7454597125,
+        4.309827532962157,
+        7.306682083491003
+      ]
+    ],
+    "nsites": 12,
+    "species": [
+      {
+        "name": "O",
+        "chemical_symbols": [
+          "O"
+        ],
+        "concentration": [
+          1.0
+        ],
+        "mass": null,
+        "original_name": null,
+        "attached": null,
+        "nattached": null
+      },
+      {
+        "name": "Ti",
+        "chemical_symbols": [
+          "Ti"
+        ],
+        "concentration": [
+          1.0
+        ],
+        "mass": null,
+        "original_name": null,
+        "attached": null,
+        "nattached": null
+      }
+    ],
+    "species_at_sites": [
+      "Ti",
+      "Ti",
+      "Ti",
+      "Ti",
+      "O",
+      "O",
+      "O",
+      "O",
+      "O",
+      "O",
+      "O",
+      "O"
+    ],
+    "assemblies": null,
+    "structure_features": [],
+    "_alexandria_hull_distance": 0.058873117,
+    "_alexandria_space_group": 62,
+    "_alexandria_charges": [
+      8.723,
+      8.723,
+      8.723,
+      8.723,
+      5.042,
+      5.042,
+      5.042,
+      5.042,
+      5.05,
+      5.05,
+      5.05,
+      5.05
+    ],
+    "_alexandria_phase_separation_energy": -0.32959875,
+    "_alexandria_magnetic_moments": [
+      -0.0,
+      -0.0,
+      -0.0,
+      -0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "_alexandria_band_gap_direct": 2.6101,
+    "_alexandria_dos_ef": 0.0,
+    "_alexandria_decomposition": " TiO2 ",
+    "_alexandria_energy_corrected": -112.58214,
+    "_alexandria_stress_tensor": [
+      [
+        1.0979939,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.7727838,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.91173816
+      ]
+    ],
+    "_alexandria_energy": -106.96381587,
+    "_alexandria_formation_energy_per_atom": -3.444733,
+    "_alexandria_forces": [
+      [
+        0.0,
+        0.00221618,
+        0.00492181
+      ],
+      [
+        -0.0,
+        -0.00221618,
+        -0.00492181
+      ],
+      [
+        0.0,
+        0.00221618,
+        -0.00492181
+      ],
+      [
+        -0.0,
+        -0.00221618,
+        0.00492181
+      ],
+      [
+        -0.0,
+        -0.003659,
+        0.00188282
+      ],
+      [
+        0.0,
+        0.003659,
+        -0.00188282
+      ],
+      [
+        -0.0,
+        -0.003659,
+        -0.00188282
+      ],
+      [
+        0.0,
+        0.003659,
+        0.00188282
+      ],
+      [
+        -0.0,
+        -0.00077354,
+        -0.00072678
+      ],
+      [
+        0.0,
+        0.00077354,
+        0.00072678
+      ],
+      [
+        -0.0,
+        -0.00077354,
+        0.00072678
+      ],
+      [
+        0.0,
+        0.00077354,
+        -0.00072678
+      ]
+    ],
+    "_alexandria_xc_functional": "gga_x_pbe + gga_c_pbe",
+    "_alexandria_band_gap": 2.473,
+    "_alexandria_magnetization": 0.0
+  },
+  "relationships": {
+    "references": {
+      "data": [
+        {
+          "id": "10.24435/materialscloud:m7-50",
+          "type": "references"
+        },
+        {
+          "id": "10.1002/adma.202307085",
+          "type": "references"
+        },
+        {
+          "id": "10.1126/sciadv.abi7948",
+          "type": "references"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "id": 4068474,
+  "type": "structures",
+  "attributes": {
+    "last_modified": null,
+    "chemical_formula_reduced": "AuSb3",
+    "chemical_formula_anonymous": "A3B",
+    "nelements": 2,
+    "elements": [
+      "Au",
+      "Sb"
+    ],
+    "nsites": 4,
+    "lattice_vectors": [
+      [
+        2.976178,
+        2.976178,
+        2.976178
+      ],
+      [
+        2.976178,
+        -2.976178,
+        -2.976178
+      ],
+      [
+        -2.976178,
+        2.976178,
+        -2.976178
+      ]
+    ],
+    "species_at_sites": [
+      "Au",
+      "Sb",
+      "Sb",
+      "Sb"
+    ],
+    "nperiodic_dimensions": 3,
+    "structure_features": [],
+    "chemical_formula_descriptive": "AuSb3",
+    "cartesian_site_positions": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        2.97618,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        2.97618,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -2.97618
+      ]
+    ],
+    "_oqmd_entry_id": 8105,
+    "_oqmd_calculation_id": 12416,
+    "_oqmd_icsd_id": 43504,
+    "_oqmd_band_gap": 0.0,
+    "_oqmd_delta_e": 0.0353,
+    "_oqmd_volume": 105.448,
+    "_oqmd_stability": 0.092,
+    "_oqmd_prototype": null,
+    "_oqmd_spacegroup": "Im-3m"
+  }
+}

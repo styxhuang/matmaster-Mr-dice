@@ -1,0 +1,12 @@
+{
+  "mof1_name": "LULJAE_clean",
+  "mof1_db": "CoREMOF 2014",
+  "mof1_atoms": 30,
+  "mof1_sa": 0.0,
+  "mof2_name": "LULJAE_clean",
+  "mof2_db": "CoREMOF 2019",
+  "mof2_atoms": 30,
+  "mof2_sa": 701.491,
+  "atom_diff_percent": 0.0,
+  "sa_diff_percent": 200.00000000000003
+}

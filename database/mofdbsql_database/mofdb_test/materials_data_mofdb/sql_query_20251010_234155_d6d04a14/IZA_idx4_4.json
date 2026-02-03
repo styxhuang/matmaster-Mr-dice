@@ -1,0 +1,10 @@
+{
+  "database": "IZA",
+  "total_mofs": 216,
+  "avg_void_fraction": 0.30756531250000013,
+  "min_void_fraction": 0.0,
+  "max_void_fraction": 0.666291,
+  "avg_surface_area": 388.3469605138887,
+  "high_porosity_count": 5,
+  "high_porosity_percentage": 2.31
+}

@@ -1,0 +1,24 @@
+{
+    "relax": {
+        "inputs": {
+            "check_convergence": false
+        },
+        "image": "registry.dp.tech/dptech/prod-26832/lam-crystal-philately:dp-mptraj-ase-utype",
+        "executor": {
+            "image_pull_policy": "IfNotPresent",
+            "machine_dict": {
+                "batch_type": "Bohrium",
+                "context_type": "Bohrium",
+                "remote_profile": {
+                    "input_data": {
+                        "job_type": "container",
+                        "platform": "ali",
+                        "scass_type": "1 * NVIDIA T4_16g",
+                        "maxRescheduleTimes": 10
+                    }
+                }
+            },
+            "retry_on_submission_error": 10
+        }
+    }
+}

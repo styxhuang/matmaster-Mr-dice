@@ -1,0 +1,12 @@
+{
+  "mof1_name": "AWW-0",
+  "mof1_db": "IZA",
+  "mof1_atoms": 7,
+  "mof1_sa": 384.053,
+  "mof2_name": "LTJ-0",
+  "mof2_db": "IZA",
+  "mof2_atoms": 7,
+  "mof2_sa": 0.0,
+  "atom_diff_percent": 0.0,
+  "sa_diff_percent": 200.00000000000003
+}
