@@ -138,7 +138,7 @@ def validate_cif(fpth: str, timeout: int=3):
 
 def query_hull_url_by_composition(composition: str) -> str:
     access_key = os.environ.get("BOHRIUM_ACCESS_KEY")
-    query_url = os.environ.get("OPENLAM_HULL_QUERY_URL", "http://openapi.dp.tech/openapi/v1/structures/query_hull_by_composition")
+    query_url = os.environ.get("OPENLAM_HULL_QUERY_URL")
     query_url += "/" + composition
     headers = {
         "Content-type": "application/json",
