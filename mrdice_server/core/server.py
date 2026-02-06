@@ -239,7 +239,7 @@ def _collect_and_copy_result_files(
 
 
 @mcp.tool()
-async def mrdice_search(
+async def fetch_structures_from_db(
     query: str,
     n_results: int = DEFAULT_N_RESULTS,
     output_format: str = DEFAULT_OUTPUT_FORMAT,
@@ -346,7 +346,7 @@ async def mrdice_search(
     files = _collect_and_copy_result_files(results=ranked, output_dir=output_dir, output_format=output_format)
 
     manifest = {
-        "mode": "mrdice_search",
+        "mode": "fetch_structures_from_db",
         "query": query,
         "query_used": expanded_query,
         "n_results": n_results,
