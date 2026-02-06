@@ -1,44 +1,76 @@
+"""
+Router module: intelligent database selection based on query characteristics.
+"""
 import logging
-from typing import Any, Dict, List, Tuple
+import sys
+from pathlib import Path
+from typing import Any, Dict, List
 
-# Database descriptions for intelligent selection
-DATABASE_DESCRIPTIONS = {
-    "bohriumpublic": {
-        "name": "Bohrium Public",
-        "description": "Large-scale crystal structure database with formation energy and band gap data",
-        "material_types": ["crystal"],
-        "capabilities": ["formula", "elements", "space_group", "band_gap", "formation_energy"],
-        "priority": 1,
-    },
-    "mofdb": {
-        "name": "MOFdb",
-        "description": "Metal-Organic Framework database with pore structure and surface area data",
-        "material_types": ["mof"],
-        "capabilities": ["formula", "elements", "pore_size", "surface_area"],
-        "priority": 1,
-    },
-    "mofdbsql": {
-        "name": "MOFdb SQL",
-        "description": "MOF database with SQL query interface for complex searches",
-        "material_types": ["mof"],
-        "capabilities": ["formula", "elements", "sql_query"],
-        "priority": 2,
-    },
-    "openlam": {
-        "name": "OpenLAM",
-        "description": "Open-source lattice matching database for crystal structures",
-        "material_types": ["crystal"],
-        "capabilities": ["formula", "elements", "lattice_parameters"],
-        "priority": 2,
-    },
-    "optimade": {
-        "name": "OPTIMADE",
-        "description": "Multi-provider materials database with standardized API",
-        "material_types": ["crystal", "mof"],
-        "capabilities": ["formula", "elements", "space_group", "band_gap"],
-        "priority": 3,
-    },
-}
+# Import database constants
+_project_root = Path(__file__).parent.parent
+_database_path = _project_root / "database"
+if str(_database_path) not in sys.path:
+    sys.path.insert(0, str(_database_path))
+
+# Load database info from constants
+DATABASE_DESCRIPTIONS: Dict[str, Dict[str, Any]] = {}
+
+try:
+    from bohriumpublic_database.constant import DATABASE_INFO as bohrium_info
+    DATABASE_DESCRIPTIONS["bohriumpublic"] = bohrium_info
+except ImportError as e:
+    logging.warning(f"Failed to import bohriumpublic constants: {e}")
+
+try:
+    from mofdbsql_database.constant import DATABASE_INFO as mofdbsql_info
+    DATABASE_DESCRIPTIONS["mofdbsql"] = mofdbsql_info
+except ImportError as e:
+    logging.warning(f"Failed to import mofdbsql constants: {e}")
+
+try:
+    from openlam_database.constant import DATABASE_INFO as openlam_info
+    DATABASE_DESCRIPTIONS["openlam"] = openlam_info
+except ImportError as e:
+    logging.warning(f"Failed to import openlam constants: {e}")
+
+try:
+    from optimade_database.constant import DATABASE_INFO as optimade_info
+    DATABASE_DESCRIPTIONS["optimade"] = optimade_info
+except ImportError as e:
+    logging.warning(f"Failed to import optimade constants: {e}")
+
+# Fallback descriptions if constants not available
+if not DATABASE_DESCRIPTIONS:
+    DATABASE_DESCRIPTIONS = {
+        "bohriumpublic": {
+            "name": "Bohrium Public",
+            "description": "Large-scale crystal structure database with formation energy and band gap data",
+            "material_types": ["crystal"],
+            "capabilities": ["formula", "elements", "space_group", "band_gap", "formation_energy"],
+            "priority": 1,
+        },
+        "mofdbsql": {
+            "name": "MOFdb SQL",
+            "description": "MOF database with SQL query interface for complex searches",
+            "material_types": ["mof"],
+            "capabilities": ["formula", "elements", "sql_query"],
+            "priority": 2,
+        },
+        "openlam": {
+            "name": "OpenLAM",
+            "description": "Open-source lattice matching database for crystal structures",
+            "material_types": ["crystal"],
+            "capabilities": ["formula", "elements", "lattice_parameters"],
+            "priority": 2,
+        },
+        "optimade": {
+            "name": "OPTIMADE",
+            "description": "Multi-provider materials database with standardized API",
+            "material_types": ["crystal", "mof"],
+            "capabilities": ["formula", "elements", "space_group", "band_gap"],
+            "priority": 3,
+        },
+    }
 
 
 def select_databases(
@@ -50,94 +82,99 @@ def select_databases(
     Intelligently select databases based on material type, domain, and required filters.
     
     Args:
-        material_type: Type of material (crystal, mof, unknown)
+        material_type: Material type (crystal, mof, unknown)
         domain: Material domain (semiconductor, catalyst, battery, etc.)
-        filters: Search filters to determine required capabilities
+        filters: Search filters dictionary
     
     Returns:
         List of database names in priority order
     """
-    required_capabilities = set()
-    if filters.get("formula"):
-        required_capabilities.add("formula")
-    if filters.get("elements"):
-        required_capabilities.add("elements")
-    if filters.get("space_group"):
-        required_capabilities.add("space_group")
-    if filters.get("band_gap"):
-        required_capabilities.add("band_gap")
-    if filters.get("energy"):
-        required_capabilities.add("formation_energy")
+    if not DATABASE_DESCRIPTIONS:
+        # Fallback to default routes
+        return plan_routes(material_type, domain)
     
     # Score databases based on compatibility
-    scored: List[Tuple[int, str]] = []
+    db_scores: Dict[str, float] = {}
+    
     for db_name, db_info in DATABASE_DESCRIPTIONS.items():
-        # Check material type compatibility
-        if material_type != "unknown" and material_type not in db_info["material_types"]:
-            continue
+        score = 0.0
         
-        # Calculate compatibility score
-        score = 0
-        db_caps = set(db_info["capabilities"])
+        # Material type match
+        if material_type in db_info.get("material_types", []):
+            score += 10.0
+        elif material_type == "unknown":
+            score += 5.0
         
-        # Priority: higher priority = lower number, so we subtract
-        score += (10 - db_info["priority"]) * 10
+        # Domain match
+        if domain in db_info.get("domains", []):
+            score += 5.0
         
-        # Capability match: each matching capability adds points
-        matching_caps = required_capabilities & db_caps
-        score += len(matching_caps) * 5
+        # Capability match
+        capabilities = db_info.get("capabilities", [])
+        filter_keys = set(filters.keys()) if filters else set()
         
-        # Domain-specific preferences
-        if domain == "battery" and db_name == "bohriumpublic":
-            score += 5
-        if domain == "catalyst" and "mof" in db_name:
-            score += 5
+        # Check if database supports required filters
+        if "formula" in filter_keys and "formula" in capabilities:
+            score += 3.0
+        if "elements" in filter_keys and "elements" in capabilities:
+            score += 3.0
+        if "space_group" in filter_keys and "space_group" in capabilities:
+            score += 2.0
+        if "band_gap" in filter_keys and "band_gap" in capabilities:
+            score += 2.0
+        if "sql_query" in filter_keys and "sql_query" in capabilities:
+            score += 5.0  # SQL queries are special
         
-        scored.append((score, db_name))
+        # Priority bonus (lower number = higher priority)
+        priority = db_info.get("priority", 99)
+        score += (10.0 - priority)
+        
+        if score > 0:
+            db_scores[db_name] = score
     
     # Sort by score (descending) and return database names
-    scored.sort(key=lambda x: x[0], reverse=True)
-    result = [db_name for _, db_name in scored]
+    result = sorted(db_scores.items(), key=lambda x: x[1], reverse=True)
+    result = [db_name for db_name, _ in result]
     
     # Fallback: if no databases selected, use default routes
     if not result:
-        return plan_routes(material_type)
+        return plan_routes(material_type, domain)
     
     logging.info(f"Selected databases for {material_type}/{domain}: {result}")
     return result
 
 
-def plan_routes(material_type: str) -> List[str]:
+def plan_routes(material_type: str, domain: str) -> List[str]:
     """
     Decide database route order based on material type (fallback method).
     """
     if material_type == "mof":
-        return ["mofdb", "mofdbsql"]
+        if domain == "catalyst":
+            return ["mofdbsql", "optimade"]
+        return ["mofdbsql", "optimade"]
+    
     if material_type == "crystal":
+        if domain == "battery":
+            return ["bohriumpublic", "openlam", "optimade"]
+        if domain == "semiconductor":
+            return ["bohriumpublic", "optimade", "openlam"]
         return ["bohriumpublic", "openlam", "optimade"]
-    return ["bohriumpublic", "openlam", "optimade", "mofdb", "mofdbsql"]
+    
+    return ["bohriumpublic", "openlam", "optimade", "mofdbsql"]
 
 
-def degrade_filters(filters: Dict[str, Any], attempt: int) -> Dict[str, Any]:
+def normalize_n_results(n_results: int, default: int = 5, max_results: int = 20) -> int:
     """
-    attempt 1: strict (all filters)
-    attempt 2: remove band_gap, space_group, time_range
-    attempt 3: keep only elements or keywords-friendly filters
+    Normalize n_results to valid range.
+    
+    Args:
+        n_results: Requested number of results
+        default: Default value if n_results is invalid
+        max_results: Maximum allowed value
+    
+    Returns:
+        Normalized n_results value
     """
-    f = dict(filters or {})
-    if attempt == 1:
-        return f
-    if attempt == 2:
-        f["band_gap"] = {"min": None, "max": None}
-        f["space_group"] = None
-        f["time_range"] = {"start": None, "end": None}
-        return f
-    # attempt 3
-    keep = {"elements", "formula"}
-    return {k: v for k, v in f.items() if k in keep}
-
-
-def normalize_n_results(n_results: int, default_n: int, max_n: int) -> int:
-    if not n_results or n_results <= 0:
-        return default_n
-    return min(n_results, max_n)
+    if not isinstance(n_results, int) or n_results < 1:
+        return default
+    return min(n_results, max_results)

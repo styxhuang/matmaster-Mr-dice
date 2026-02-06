@@ -1,8 +1,11 @@
 import os
 from pathlib import Path
-
+from typing import Any, Dict
 
 DEFAULT_MODEL = "deepseek/deepseek-chat"
+
+# Executor used by ADK/MCP client (agent); server uses this as single source of truth.
+LOCAL_EXECUTOR: Dict[str, Any] = {"type": "local"}
 DEFAULT_N_RESULTS = 5
 MAX_N_RESULTS = 20
 DEFAULT_OUTPUT_FORMAT = "cif"
@@ -36,6 +39,17 @@ def get_data_dir() -> Path:
     return Path.cwd()
 
 
+def get_optimade_timeouts() -> tuple[float, float]:
+    """
+    Get OPTIMADE HTTP timeout (per request) and total timeout (whole fetch).
+    - OPTIMADE_HTTP_TIMEOUT: seconds per provider request (default 15)
+    - OPTIMADE_TOTAL_TIMEOUT: seconds for entire fetch, avoid hanging (default 90)
+    """
+    http_timeout = float(os.getenv("OPTIMADE_HTTP_TIMEOUT", "15"))
+    total_timeout = float(os.getenv("OPTIMADE_TOTAL_TIMEOUT", "90"))
+    return max(5.0, http_timeout), max(30.0, total_timeout)
+
+
 def get_bohrium_output_dir() -> Path:
     """
     Get the output directory for Bohrium public database results.
@@ -47,4 +61,4 @@ def get_bohrium_output_dir() -> Path:
         return Path(output_dir)
     # Database is now in mrdice_server/database
     project_root = Path(__file__).parent.parent
-    return project_root / "database" / "bohriumpublic_database" / "Bohriumpublic_Server" / "materials_data_bohriumpublic"
+    return project_root / "database" / "bohriumpublic_database" / "materials_data_bohriumpublic"

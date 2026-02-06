@@ -70,3 +70,11 @@ dmypy.json
 tests/output
 tests/*.json
 thoughts.md
+
+# 日志文件
+logs/*.log
+*.log
+mrdice_server/database/MOF_SQL_test
+tmp
+tests/summary_*.md
+tests/outputs

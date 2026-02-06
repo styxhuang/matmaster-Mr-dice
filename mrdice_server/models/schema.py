@@ -1,7 +1,15 @@
 from typing import Any, Dict, List, Optional, TypedDict
 
 
-class SearchResult(TypedDict):
+class SearchResult(TypedDict, total=False):
+    """
+    Unified result shape for aggregating multiple DBs; fields vary by source.
+
+    - Crystal DBs (Bohrium Public, OPTIMADE, OpenLAM): include name, structure_file,
+      formula, elements, space_group, n_atoms, band_gap, formation_energy, source, id.
+    - Non-crystal DBs (e.g. MOFdb): include only name, structure_file, source, id,
+      n_atoms; do not include formula, elements, space_group, band_gap, formation_energy.
+    """
     name: Optional[str]
     structure_file: Optional[str]
     formula: Optional[str]

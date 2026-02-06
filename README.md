@@ -49,11 +49,20 @@ pip install bohr-agent-sdk
 # 使用 uv 运行主服务器
 uv run python -m mrdice_server.server
 
+# 指定端口和主机
+uv run python -m mrdice_server.server --port 50001 --host 0.0.0.0
+
+# 指定日志级别
+uv run python -m mrdice_server.server --log-level DEBUG
+
 # 或激活虚拟环境后直接运行
 source .venv/bin/activate  # Linux/macOS
 # 或
 .venv\Scripts\activate  # Windows
+python -m mrdice_server.server
 ```
+
+**详细使用说明请查看 [USAGE.md](USAGE.md)**
 
 #### 添加依赖
 

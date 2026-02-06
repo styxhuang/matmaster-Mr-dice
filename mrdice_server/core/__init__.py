@@ -3,6 +3,7 @@ from .config import (
     DEFAULT_MODEL,
     DEFAULT_N_RESULTS,
     DEFAULT_OUTPUT_FORMAT,
+    LOCAL_EXECUTOR,
     MAX_N_RESULTS,
     get_bohrium_output_dir,
     get_data_dir,
@@ -23,16 +24,17 @@ from .preprocessor import (
     preprocess_query,
     recognize_intent,
 )
-from .server import mcp, mrdice_search
+from .server import mcp, fetch_structures_from_db
 
 __all__ = [
     # Server
-    "mrdice_search",
+    "fetch_structures_from_db",
     "mcp",
     # Config
     "DEFAULT_MODEL",
     "DEFAULT_N_RESULTS",
     "DEFAULT_OUTPUT_FORMAT",
+    "LOCAL_EXECUTOR",
     "MAX_N_RESULTS",
     "get_llm_config",
     "get_data_dir",
