@@ -8,9 +8,9 @@ from typing import Any, Dict, List
 
 import requests
 
-from .base import Retriever
+from .base import BaseRetriever
 from ..core.config import get_bohrium_output_dir
-from ..models.schema import normalize_result, SearchResult
+from ..models.schema import SearchResult
 
 
 def _import_bohrium_utils():
@@ -24,7 +24,7 @@ def _import_bohrium_utils():
         if str(database_path) not in sys.path:
             sys.path.insert(0, str(database_path))
 
-        from bohriumpublic_database.Bohriumpublic_Server.utils import (
+        from bohriumpublic_database.utils import (
             DB_CORE_HOST,
             SPACEGROUP_UNICODE,
             normalize_formula,
@@ -43,7 +43,7 @@ def _import_bohrium_utils():
         raise
 
 
-class BohriumPublicRetriever:
+class BohriumPublicRetriever(BaseRetriever):
     def __init__(self) -> None:
         self.base_output_dir = get_bohrium_output_dir()
         self.base_output_dir.mkdir(parents=True, exist_ok=True)
@@ -141,7 +141,7 @@ class BohriumPublicRetriever:
         for i, struct in enumerate(items):
             struct_id = struct.get("id", f"idx{i}")
             name = f"bohriumcrystal_{struct_id}_{i}"
-            structure_file = str(output_dir / f"{name}.{output_format}") if output_format else None
+            structure_file = self.build_structure_file_path(output_dir, name, output_format, check_exists=True)
             elements_list = struct.get("elements") or []
             space_group = struct.get("space_symbol") or struct.get("space_group") or None
             n_atoms = struct.get("atomCount") or struct.get("atom_count")
@@ -150,11 +150,11 @@ class BohriumPublicRetriever:
                 "predicted_formation_energy"
             )
             results.append(
-                normalize_result(
+                self.create_crystal_search_result(
                     name=struct.get("name") or name,
                     structure_file=structure_file,
                     formula=struct.get("formula") or struct.get("reduced_formula"),
-                    elements=elements_list,
+                    elements=elements_list,  # Already provided, don't auto-extract
                     space_group=space_group,
                     n_atoms=n_atoms,
                     band_gap=band_gap_val,

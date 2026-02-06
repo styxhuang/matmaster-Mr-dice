@@ -1,13 +1,13 @@
 import json
 import logging
-import re
+import os, re
 from pathlib import Path
 from typing import List, Literal, TypedDict, Any
 
 Format = Literal["cif", "json"]
 
-# base_data_dir = Path("/home/MOF_SQL_test/data/original")
-base_data_dir = Path("/home/MOF_SQL_test/data/original")
+root_dir = Path(os.getenv("MR_DICE_DATA_DIR"))
+base_data_dir = root_dir / "MOF_SQL_test" / "data" / "original"
 
 MOFDB_DROP_ATTRS = {
     "cif", 
@@ -132,6 +132,19 @@ def _provider(mof: Any) -> str:
     return _safe_basename(prov)
 
 
+def build_output_stem(mof: Any, idx: int) -> str:
+    """
+    Build the filename stem used for saved MOF files.
+    
+    This is shared between the writer (`save_mofs`) and readers
+    (e.g. retrievers) so that structure file paths can be reconstructed
+    reliably from the original MOF row.
+    """
+    prov = _provider(mof)
+    ident = _pick_identifier(mof, idx)
+    return _safe_basename(f"{prov}_{ident}_{idx}")
+
+
 def save_mofs(
     items: List[Any],
     output_dir: Path,
@@ -144,9 +157,7 @@ def save_mofs(
     warnings = []
     
     for i, mof in enumerate(items):
-        prov = _provider(mof)
-        ident = _pick_identifier(mof, i)
-        stem = _safe_basename(f"{prov}_{ident}_{i}")
+        stem = build_output_stem(mof, i)
         
         cif_path = mof.get('cif_path')
         

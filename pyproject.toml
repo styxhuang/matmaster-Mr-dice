@@ -3,17 +3,20 @@ name = "mr-dice"
 version = "0.1.0"
 description = "Materials Retriever for Database-Integrated Cross-domain Exploration"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 dependencies = [
     "requests>=2.31.0",
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
+    "dpdispatcher>=1.0.0",
+    "bohrium-sdk>=0.15.0",
+    "bohrium-open-sdk>=1.0.0",
+    "bohrium-agents @ file:///Users/dp/Ming/code/bohrium-agents",
+    "pymatgen>=2024.0.0",
+    "optimade>=0.16.0",
 ]
-# Note: dp.agent may be an internal package, install separately if needed
-# If required, uncomment the line below or install manually:
-# "bohr-agent-sdk>=0.1.23",
 
 [project.optional-dependencies]
 dev = [
@@ -27,6 +30,9 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["mrdice_server"]

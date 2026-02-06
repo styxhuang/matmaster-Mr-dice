@@ -100,7 +100,7 @@ URLS_FROM_PROVIDERS = {
         "https://optimade-gnome.odbx.science/"
     ],
     "omdb": ["http://optimade.openmaterialsdb.se/"],
-    "oqmd": ["https://oqmd.org/optimade/"],
+    # "oqmd": ["https://oqmd.org/optimade/"],
     "jarvis": ["https://jarvis.nist.gov/optimade/jarvisdft"],
     "tcod": ["https://www.crystallography.net/tcod/optimade"],
     "twodmatpedia": ["http://optimade.2dmatpedia.org/"]
@@ -566,10 +566,11 @@ def get_spg_filter_map(spg_number: int, providers: Iterable[str]) -> Dict[str, s
 
     out: Dict[str, str] = {}
     for p in providers:
-        if p in name_map:
-            clause = name_map[p]()
-            if clause:
-                out[p] = clause
+        if p not in name_map:
+            continue
+        clause = name_map[p]()
+        if clause:
+            out[p] = clause
     return out
 
 
@@ -637,19 +638,409 @@ def build_provider_filters(base: Optional[str], provider_map: Dict[str, str]) ->
 
 
 def get_base_urls() -> List[str]:
+    """
+    Get base OPTIMADE URLs for all known providers.
+    Uses the local URLS_FROM_PROVIDERS mapping only, without requiring the optimade package.
+    """
+    base_urls: List[str] = []
+    for urls in URLS_FROM_PROVIDERS.values():
+        base_urls.extend(urls)
+    return base_urls
 
-    try:
-        from optimade.utils import get_all_databases
 
-        base_urls = list(get_all_databases())
-        return base_urls
+# =========================
+# High-level query helpers
+# =========================
 
-    except ImportError:
-        print("Warning: optimade.utils not available")
-        return []
-    except Exception as e:
-        print(f"Error getting base URLs: {e}")
-        return []
+def _provider_urls_from_names(providers: Iterable[str]) -> Dict[str, List[str]]:
+    """
+    Build provider -> base_urls mapping from provider names.
+    """
+    out: Dict[str, List[str]] = {}
+    for p in providers:
+        urls = [u for u in URLS_FROM_PROVIDERS.get(p, [])]
+        if urls:
+            out[p] = urls
+    return out
+
+
+async def fetch_structures_with_filter_core(
+    *,
+    filter: str,
+    base_output_dir: Path,
+    as_format: Optional[List[str]] = None,
+    n_results: int = 10,
+    providers: Optional[List[str]] = None,
+    http_timeout: float = 25.0,
+    max_returned_structs: int = 30,
+) -> Dict[str, Any]:
+    """
+    Core implementation for fetching structures with a raw OPTIMADE filter using OptimadeClient.
+    Returns a dict compatible with MCP tool output.
+    """
+    import asyncio
+    import hashlib
+    from datetime import datetime
+
+    from anyio import to_thread
+    from optimade.client import OptimadeClient
+
+    filt = (filter or "").strip()
+    if not filt:
+        raise ValueError("Empty filter string")
+    filt = normalize_cfr_in_filter(filt)
+
+    used = set(providers) if providers and len(providers) > 0 else DEFAULT_PROVIDERS
+    provider_to_urls = _provider_urls_from_names(used)
+
+    _per_provider_timeout = max(http_timeout + 15, 30)
+
+    async def _query_one(provider: str) -> dict:
+        provider_urls = provider_to_urls.get(provider, [])
+        if not provider_urls:
+            logging.warning(f"[raw] No URLs found for provider {provider}")
+            return {"structures": {}}
+
+        client = OptimadeClient(
+            base_urls=provider_urls,
+            max_results_per_provider=n_results,
+            http_timeout=http_timeout,
+        )
+        try:
+            return await asyncio.wait_for(
+                to_thread.run_sync(lambda: client.get(filter=filt)),
+                timeout=_per_provider_timeout,
+            )
+        except asyncio.TimeoutError:
+            logging.warning(f"[raw] Provider {provider} timed out after {_per_provider_timeout}s")
+            return {"structures": {}}
+
+    results_list = await asyncio.gather(
+        *[_query_one(p) for p in used],
+        return_exceptions=True,
+    )
+
+    norm_results, stats = normalize_and_collect(results_list)
+    plan = distribute_quota_fair(stats, n_results)
+
+    base_output_dir.mkdir(parents=True, exist_ok=True)
+    tag = filter_to_tag(filt)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    short = hashlib.sha1(filt.encode("utf-8")).hexdigest()[:8]
+    out_folder = base_output_dir / f"{tag}_{ts}_{short}"
+
+    formats_to_save = as_format or ["cif", "json"]
+
+    all_files: List[str] = []
+    all_warnings: List[str] = []
+    all_providers: List[str] = []
+    all_cleaned: List[dict] = []
+
+    for res in norm_results:
+        for fmt in formats_to_save:
+            files, warns, providers_seen, cleaned = await to_thread.run_sync(
+                save_structures,
+                res,
+                out_folder,
+                (fmt == "cif"),
+                plan,
+            )
+            all_files.extend(files)
+            all_warnings.extend(warns)
+            all_providers.extend(providers_seen)
+            if fmt == formats_to_save[0]:
+                all_cleaned.extend(cleaned)
+
+    all_providers = list(dict.fromkeys(all_providers))
+
+    manifest = {
+        "mode": "raw_filter",
+        "filter": filt,
+        "providers_requested": sorted(list(used)),
+        "providers_seen": all_providers,
+        "files": all_files,
+        "warnings": all_warnings,
+        "format": formats_to_save,
+        "n_results": n_results,
+        "stats": stats,
+        "plan": plan,
+        "n_found": len(all_cleaned),
+    }
+    out_folder.mkdir(parents=True, exist_ok=True)
+    (out_folder / "summary.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+
+    all_cleaned = all_cleaned[:max_returned_structs]
+    n_found = len(all_cleaned)
+    return {
+        "output_dir": out_folder,
+        "cleaned_structures": all_cleaned,
+        "n_found": n_found,
+        "files": all_files,
+        "warnings": all_warnings,
+        "providers_seen": all_providers,
+        "code": -9999 if n_found == 0 else 0,
+        "message": "Success",
+    }
+
+
+async def fetch_structures_with_spg_core(
+    *,
+    base_filter: Optional[str],
+    spg_number: int,
+    base_output_dir: Path,
+    as_format: Optional[List[str]] = None,
+    n_results: int = 10,
+    providers: Optional[List[str]] = None,
+    http_timeout: float = 25.0,
+    max_returned_structs: int = 30,
+) -> Dict[str, Any]:
+    """
+    Core implementation for fetching structures constrained by space group using OptimadeClient.
+    """
+    import asyncio
+    import hashlib
+    from datetime import datetime
+
+    from anyio import to_thread
+    from optimade.client import OptimadeClient
+
+    base = (base_filter or "").strip()
+    base = normalize_cfr_in_filter(base)
+    used = set(providers) if providers and len(providers) > 0 else DEFAULT_SPG_PROVIDERS
+
+    spg_map = get_spg_filter_map(spg_number, used)
+    filters = build_provider_filters(base, spg_map)
+    if not filters:
+        return {
+            "output_dir": Path(),
+            "cleaned_structures": [],
+            "n_found": 0,
+            "code": -1,
+            "message": "No provider-specific space-group clause available for the specified providers.",
+        }
+
+    provider_to_urls = _provider_urls_from_names(filters.keys())
+    _per_provider_timeout = max(http_timeout + 15, 30)
+
+    async def _query_one(provider: str, clause: str) -> dict:
+        provider_urls = provider_to_urls.get(provider, [])
+        if not provider_urls:
+            logging.warning(f"[spg] No URLs found for provider {provider}")
+            return {"structures": {}}
+
+        client = OptimadeClient(
+            base_urls=provider_urls,
+            max_results_per_provider=n_results,
+            http_timeout=http_timeout,
+        )
+        try:
+            return await asyncio.wait_for(
+                to_thread.run_sync(lambda: client.get(filter=clause)),
+                timeout=_per_provider_timeout,
+            )
+        except asyncio.TimeoutError:
+            logging.warning(f"[spg] Provider {provider} timed out after {_per_provider_timeout}s")
+            return {"structures": {}}
+
+    results_list = await asyncio.gather(
+        *[_query_one(p, clause) for p, clause in filters.items()],
+        return_exceptions=True,
+    )
+
+    norm_results, stats = normalize_and_collect(results_list)
+    plan = distribute_quota_fair(stats, n_results)
+
+    base_output_dir.mkdir(parents=True, exist_ok=True)
+    tag = filter_to_tag(f"{base} AND spg={spg_number}")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    short = hashlib.sha1(f"{base}|spg={spg_number}".encode("utf-8")).hexdigest()[:8]
+    out_folder = base_output_dir / f"{tag}_{ts}_{short}"
+
+    formats_to_save = as_format or ["cif", "json"]
+
+    all_files: List[str] = []
+    all_warnings: List[str] = []
+    all_providers: List[str] = []
+    all_cleaned: List[dict] = []
+
+    for res in norm_results:
+        for fmt in formats_to_save:
+            files, warns, providers_seen, cleaned = await to_thread.run_sync(
+                save_structures,
+                res,
+                out_folder,
+                (fmt == "cif"),
+                plan,
+            )
+            all_files.extend(files)
+            all_warnings.extend(warns)
+            all_providers.extend(providers_seen)
+            if fmt == formats_to_save[0]:
+                all_cleaned.extend(cleaned)
+
+    all_providers = list(dict.fromkeys(all_providers))
+
+    manifest = {
+        "mode": "space_group",
+        "base_filter": base,
+        "spg_number": spg_number,
+        "providers_requested": sorted(list(used)),
+        "providers_seen": all_providers,
+        "files": all_files,
+        "warnings": all_warnings,
+        "format": formats_to_save,
+        "n_results": n_results,
+        "stats": stats,
+        "plan": plan,
+        "per_provider_filters": filters,
+        "n_found": len(all_cleaned),
+    }
+    out_folder.mkdir(parents=True, exist_ok=True)
+    (out_folder / "summary.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+
+    all_cleaned = all_cleaned[:max_returned_structs]
+    n_found = len(all_cleaned)
+    return {
+        "output_dir": out_folder,
+        "cleaned_structures": all_cleaned,
+        "n_found": n_found,
+        "files": all_files,
+        "warnings": all_warnings,
+        "providers_seen": all_providers,
+        "code": -9999 if n_found == 0 else 0,
+        "message": "Success",
+    }
+
+
+async def fetch_structures_with_bandgap_core(
+    *,
+    base_filter: Optional[str],
+    min_bg: Optional[float] = None,
+    max_bg: Optional[float] = None,
+    base_output_dir: Path,
+    as_format: Optional[List[str]] = None,
+    n_results: int = 10,
+    providers: Optional[List[str]] = None,
+    http_timeout: float = 25.0,
+    max_returned_structs: int = 30,
+) -> Dict[str, Any]:
+    """
+    Core implementation for fetching structures constrained by band gap using OptimadeClient.
+    """
+    import asyncio
+    import hashlib
+    from datetime import datetime
+
+    from anyio import to_thread
+    from optimade.client import OptimadeClient
+
+    base = (base_filter or "").strip()
+    base = normalize_cfr_in_filter(base)
+    used = set(providers) if providers and len(providers) > 0 else DEFAULT_BG_PROVIDERS
+
+    bg_map = get_bandgap_filter_map(min_bg, max_bg, used)
+    filters = build_provider_filters(base, bg_map)
+    if not filters:
+        return {
+            "output_dir": Path(),
+            "cleaned_structures": [],
+            "n_found": 0,
+            "code": -1,
+            "message": "No provider-specific band-gap clause available for the specified providers.",
+        }
+
+    provider_to_urls = _provider_urls_from_names(filters.keys())
+    _per_provider_timeout = max(http_timeout + 15, 30)
+
+    async def _query_one(provider: str, clause: str) -> dict:
+        provider_urls = provider_to_urls.get(provider, [])
+        if not provider_urls:
+            logging.warning(f"[bandgap] No URLs found for provider {provider}")
+            return {"structures": {}}
+
+        client = OptimadeClient(
+            base_urls=provider_urls,
+            max_results_per_provider=n_results,
+            http_timeout=http_timeout,
+        )
+        try:
+            return await asyncio.wait_for(
+                to_thread.run_sync(lambda: client.get(filter=clause)),
+                timeout=_per_provider_timeout,
+            )
+        except asyncio.TimeoutError:
+            logging.warning(f"[bandgap] Provider {provider} timed out after {_per_provider_timeout}s")
+            return {"structures": {}}
+
+    results_list = await asyncio.gather(
+        *[_query_one(p, clause) for p, clause in filters.items()],
+        return_exceptions=True,
+    )
+
+    norm_results, stats = normalize_and_collect(results_list)
+    plan = distribute_quota_fair(stats, n_results)
+
+    base_output_dir.mkdir(parents=True, exist_ok=True)
+    tag = filter_to_tag(f"{base} AND bandgap[{min_bg},{max_bg}]")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    short = hashlib.sha1(f"{base}|bg={min_bg}:{max_bg}".encode("utf-8")).hexdigest()[:8]
+    out_folder = base_output_dir / f"{tag}_{ts}_{short}"
+
+    formats_to_save = as_format or ["cif", "json"]
+
+    all_files: List[str] = []
+    all_warnings: List[str] = []
+    all_providers: List[str] = []
+    all_cleaned: List[dict] = []
+
+    for res in norm_results:
+        for fmt in formats_to_save:
+            files, warns, providers_seen, cleaned = await to_thread.run_sync(
+                save_structures,
+                res,
+                out_folder,
+                (fmt == "cif"),
+                plan,
+            )
+            all_files.extend(files)
+            all_warnings.extend(warns)
+            all_providers.extend(providers_seen)
+            if fmt == formats_to_save[0]:
+                all_cleaned.extend(cleaned)
+
+    all_providers = list(dict.fromkeys(all_providers))
+
+    manifest = {
+        "mode": "band_gap",
+        "base_filter": base,
+        "band_gap_min": min_bg,
+        "band_gap_max": max_bg,
+        "providers_requested": sorted(list(used)),
+        "providers_seen": all_providers,
+        "files": all_files,
+        "warnings": all_warnings,
+        "format": formats_to_save,
+        "n_results": n_results,
+        "stats": stats,
+        "plan": plan,
+        "per_provider_filters": filters,
+        "n_found": len(all_cleaned),
+    }
+    out_folder.mkdir(parents=True, exist_ok=True)
+    (out_folder / "summary.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+
+    all_cleaned = all_cleaned[:max_returned_structs]
+    n_found = len(all_cleaned)
+    return {
+        "output_dir": out_folder,
+        "cleaned_structures": all_cleaned,
+        "n_found": n_found,
+        "files": all_files,
+        "warnings": all_warnings,
+        "providers_seen": all_providers,
+        "code": -9999 if n_found == 0 else 0,
+        "message": "Success",
+    }
 
 
 if __name__ == "__main__":
