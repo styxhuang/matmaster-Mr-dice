@@ -27,6 +27,9 @@ Return JSON:
 SYSTEM_PROMPT_PARAMS = (
     "You are a material database search assistant. "
     "Extract and construct search parameters from the query. "
+    "Decide whether the user clearly prefers one specific database "
+    "(among: bohriumpublic, mofdbsql, openlam, optimade). "
+    "If there is no clear preference, leave prefer_db empty. "
     "Return strict JSON only."
 )
 
@@ -47,7 +50,8 @@ Return JSON:
     "time_range": {{"start": "...", "end": "..."}}
   }},
   "keywords": ["..."],
-  "strictness": "strict|relaxed"
+  "strictness": "strict|relaxed",
+  "prefer_db": "bohriumpublic|mofdbsql|openlam|optimade|"
 }}
 """
 

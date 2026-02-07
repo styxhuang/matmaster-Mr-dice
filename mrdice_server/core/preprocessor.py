@@ -69,6 +69,47 @@ def _elements_from_formula(formula: Optional[str]) -> List[str]:
     return result
 
 
+def _detect_target_databases(query: str) -> List[str]:
+    """Detect explicitly requested databases from query text."""
+    if not query:
+        return []
+    lower = query.lower()
+    targets: List[str] = []
+
+    def _add(db_name: str) -> None:
+        if db_name not in targets:
+            targets.append(db_name)
+
+    if "bohriumpublic" in lower or "bohrium public" in lower or "bohrium 公共" in lower:
+        _add("bohriumpublic")
+    if "mofdb" in lower or "mof db" in lower:
+        _add("mofdbsql")
+    # MOF-related named databases that should map to MOFdb SQL
+    if "coremof" in lower or "core mof" in lower:
+        _add("mofdbsql")
+    if "hmof" in lower or "h mof" in lower:
+        _add("mofdbsql")
+    if "mof数据库" in query or "mof 数据库" in query:
+        _add("mofdbsql")
+    if "openlam" in lower or "open lam" in lower:
+        _add("openlam")
+    if "optimade" in lower:
+        _add("optimade")
+
+    directional_markers = ["只用", "只使用", "仅用", "仅使用", "only use", "use only"]
+    has_directional_hint = any(marker in lower for marker in directional_markers)
+
+    if has_directional_hint:
+        if "mof" in lower and "mofdb" not in lower and "mof db" not in lower:
+            _add("mofdbsql")
+        if "bohrium" in lower and "bohriumpublic" not in lower:
+            _add("bohriumpublic")
+        if "openlam" not in lower and "open lam" not in lower and "open" in lower and "lam" in lower:
+            _add("openlam")
+
+    return targets
+
+
 def recognize_intent(query: str) -> Dict[str, Any]:
     """
     Recognize material domain and type from query.
@@ -122,7 +163,7 @@ def construct_parameters(query: str, material_type: str, domain: str) -> Dict[st
     Construct search parameters from query using LLM.
     
     Returns:
-        Dict with expanded_query, filters, keywords, strictness
+        Dict with expanded_query, filters, keywords, strictness, prefer_db
     """
     user_prompt = USER_PROMPT_PARAMS_TEMPLATE.format(
         query=query,
@@ -141,6 +182,7 @@ def construct_parameters(query: str, material_type: str, domain: str) -> Dict[st
                 "filters": data.get("filters", {}),
                 "keywords": data.get("keywords", []),
                 "strictness": data.get("strictness", "relaxed"),
+                "prefer_db": data.get("prefer_db", ""),
             }
     except LlmError as e:
         logging.warning(f"LLM parameter construction failed: {e}")
@@ -163,6 +205,7 @@ def construct_parameters(query: str, material_type: str, domain: str) -> Dict[st
         },
         "keywords": [w for w in re.split(r"\s+", query) if w],
         "strictness": "relaxed",
+        "prefer_db": "",
     }
 
 
@@ -209,7 +252,7 @@ def preprocess_query(query: str) -> Dict[str, Any]:
     Complete preprocessing pipeline: intent recognition -> parameter construction.
     
     Returns:
-        Dict with material_type, domain, filters, keywords, expanded_query, strictness
+        Dict with material_type, domain, filters, keywords, expanded_query, strictness, target_databases
     """
     if not query or not query.strip():
         return {
@@ -228,13 +271,49 @@ def preprocess_query(query: str) -> Dict[str, Any]:
     
     # Step 2: Parameter construction
     params = construct_parameters(query, material_type, domain)
-    
+    filters = params.get("filters", {}) or {}
+
+    # Prefer database decided by LLM when available; otherwise fall back to heuristics.
+    target_databases: List[str] = []
+    prefer_db = params.get("prefer_db")
+    if isinstance(prefer_db, str):
+        prefer_db = prefer_db.strip()
+        if prefer_db:
+            target_databases = [prefer_db]
+    elif isinstance(prefer_db, list):
+        cleaned = [str(x).strip() for x in prefer_db if str(x).strip()]
+        if cleaned:
+            target_databases = cleaned
+    if not target_databases:
+        target_databases = _detect_target_databases(query)
+
+    # If user explicitly mentions a MOF sub-database (e.g. CoREMOF 2019, hMOF),
+    # add a database filter for MOFdb SQL and ensure we only hit MOFdb.
+    lower = query.lower()
+    if "coremof 2019" in lower:
+        filters = dict(filters)
+        filters["database"] = "CoREMOF 2019"
+        target_databases = ["mofdbsql"]
+    elif "coremof 2014" in lower:
+        filters = dict(filters)
+        filters["database"] = "CoREMOF 2014"
+        target_databases = ["mofdbsql"]
+    elif "coremof" in lower or "core mof" in lower:
+        filters = dict(filters)
+        filters["database"] = "CoREMOF"
+        target_databases = ["mofdbsql"]
+    elif "hmof" in lower or "h mof" in lower:
+        filters = dict(filters)
+        filters["database"] = "hMOF"
+        target_databases = ["mofdbsql"]
+
     return {
         "material_type": material_type,
         "domain": domain,
-        "filters": params.get("filters", {}),
+        "filters": filters,
         "keywords": params.get("keywords", []),
         "expanded_query": params.get("expanded_query", query),
         "strictness": params.get("strictness", "relaxed"),
+        "target_databases": target_databases,
     }
 

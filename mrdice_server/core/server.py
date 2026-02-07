@@ -281,10 +281,18 @@ async def fetch_structures_from_db(
     filters = preprocessed["filters"]
     keywords = preprocessed["keywords"]
     expanded_query = preprocessed.get("expanded_query", query)
+    target_databases = preprocessed.get("target_databases") or []
     
+    # Build compact filter dict for logging (skip None and empty values).
+    _empty = (None, {}, [], "")
+    _effective = {k: v for k, v in filters.items() if v not in _empty}
+    db_names = target_databases or ALL_DATABASE_NAMES
+
     logger.info(
-        f"Preprocessing: type={material_type}, domain={domain}, "
-        f"filters={list(filters.keys())}"
+        "Search: query=%s, dbs=%s, filters=%s",
+        expanded_query or query,
+        db_names,
+        json.dumps(_effective, ensure_ascii=False),
     )
     
     # === SEARCH EXECUTION ===
@@ -292,11 +300,9 @@ async def fetch_structures_from_db(
     all_results: List[SearchResult] = []
     fallback_level = 0
     errors: Dict[str, str] = {}
-
-    logger.info(f"Search with filters: {list(filters.keys())}")
     try:
         db_results, errors = await search_databases_parallel_with_errors(
-            db_names=ALL_DATABASE_NAMES,
+            db_names=db_names,
             filters=filters,
             n_results=n_results,
             output_format=output_format,
