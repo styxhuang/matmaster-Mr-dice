@@ -158,6 +158,7 @@ def save_mofs(
     
     for i, mof in enumerate(items):
         stem = build_output_stem(mof, i)
+        ident = _pick_identifier(mof, i)
         
         cif_path = mof.get('cif_path')
         
