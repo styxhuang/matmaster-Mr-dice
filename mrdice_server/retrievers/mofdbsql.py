@@ -34,6 +34,7 @@ def _import_mofdb_utils():
             "save_mofs": save_mofs,
             "tag_from_filters": tag_from_filters,
             "build_output_stem": build_output_stem,
+            "base_data_dir": base_data_dir,
         }
     except ImportError as e:
         logging.error(f"Failed to import MOFdb SQL utils: {e}")

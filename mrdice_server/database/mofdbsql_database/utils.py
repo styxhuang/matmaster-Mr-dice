@@ -6,8 +6,34 @@ from typing import List, Literal, TypedDict, Any
 
 Format = Literal["cif", "json"]
 
-root_dir = Path(os.getenv("MR_DICE_DATA_DIR"))
-base_data_dir = root_dir / "MOF_SQL_test" / "data" / "original"
+def _get_mofdb_sql_base_data_dir() -> Path:
+    """
+    Resolve the directory that contains original MOF structure files.
+
+    Priority:
+    1) Use `MOFDB_SQL_DB_PATH` (typically points to a SQLite file under `MOF_SQL_test/mof_data/`)
+    2) Fallback to `MR_DICE_DATA_DIR` + `MOF_SQL_test/data/original`
+    3) Fallback to a path relative to this module (repo layout)
+    """
+    db_path = os.getenv("MOFDB_SQL_DB_PATH")
+    if db_path:
+        p = Path(db_path).expanduser()
+        if p.suffix.lower() in {".db", ".sqlite", ".sqlite3"}:
+            p = p.parent
+        if p.name == "mof_data":
+            p = p.parent
+        if p.name == "original" and p.parent.name == "data":
+            return p
+        return p / "data" / "original"
+
+    data_dir = os.getenv("MR_DICE_DATA_DIR")
+    if data_dir:
+        return Path(data_dir).expanduser() / "MOF_SQL_test" / "data" / "original"
+
+    return Path(__file__).resolve().parent.parent / "MOF_SQL_test" / "data" / "original"
+
+
+base_data_dir = _get_mofdb_sql_base_data_dir()
 
 MOFDB_DROP_ATTRS = {
     "cif", 
