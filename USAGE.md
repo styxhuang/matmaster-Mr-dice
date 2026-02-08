@@ -41,7 +41,7 @@ python -m mrdice_server.server
 
 ## 可用的工具
 
-### fetch_structures_from_db
+### structure_search_agent
 
 统一的材料数据库搜索工具，支持自然语言查询。
 
@@ -101,10 +101,10 @@ from pathlib import Path
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent))
 
-from mrdice_server.core.server import fetch_structures_from_db
+from mrdice_server.core.server import structure_search_agent
 
 async def test_search():
-    result = await fetch_structures_from_db(
+    result = await structure_search_agent(
         query="找一些 Fe2O3 材料",
         n_results=3,
         output_format="cif"

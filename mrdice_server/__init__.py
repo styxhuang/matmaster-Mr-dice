@@ -1,5 +1,5 @@
 """MrDice Server - Unified materials database search server."""
-from .core import mcp, fetch_structures_from_db
+from .core import mcp, structure_search_agent
 from .core.config import (
     DEFAULT_MODEL,
     DEFAULT_N_RESULTS,
@@ -11,7 +11,7 @@ from .core.config import (
 )
 
 __all__ = [
-    "fetch_structures_from_db",
+    "structure_search_agent",
     "mcp",
     "DEFAULT_MODEL",
     "DEFAULT_N_RESULTS",

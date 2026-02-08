@@ -24,11 +24,11 @@ from .preprocessor import (
     preprocess_query,
     recognize_intent,
 )
-from .server import mcp, fetch_structures_from_db
+from .server import mcp, structure_search_agent
 
 __all__ = [
     # Server
-    "fetch_structures_from_db",
+    "structure_search_agent",
     "mcp",
     # Config
     "DEFAULT_MODEL",
