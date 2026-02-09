@@ -2,7 +2,7 @@
 MrDice ADK Agent entrypoint (client-side).
 
 This module defines a Google ADK `root_agent` that connects to the running MrDice MCP server
-over SSE (`SERVER_URL`) and can call the unified tool `structure_search_agent`.
+over SSE (`SERVER_URL`) and can call the unified tool `fetch_structures_from_db`.
 
 Notes
 -----
