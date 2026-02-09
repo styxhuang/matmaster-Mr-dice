@@ -156,10 +156,10 @@ def _litellm_model_id() -> str:
 root_agent = LlmAgent(
     model=LiteLlm(model=_litellm_model_id()),
     name="MrDice_Agent",
-    description="Unified materials search agent that calls MrDice MCP tool `structure_search_agent`.",
+    description="Unified materials search agent that calls MrDice MCP tool `fetch_structures_from_db`.",
     instruction=(
         "You can call one MCP tool exposed by the MrDice server:\n\n"
-        "=== TOOL: structure_search_agent ===\n"
+        "=== TOOL: fetch_structures_from_db ===\n"
         "Use this tool to search materials across multiple databases (OPTIMADE, MOFdb SQL, OpenLAM, Bohrium public).\n"
         "Arguments:\n"
         "• query: natural language query\n"
@@ -170,12 +170,12 @@ root_agent = LlmAgent(
         "• n_found / returned / fallback_level\n\n"
         "=== EXAMPLES ===\n"
         "1) 找一些 Fe2O3 材料，返回 3 个结构文件：\n"
-        "   → Tool: structure_search_agent\n"
+        "   → Tool: fetch_structures_from_db\n"
         "     query: '找一些 Fe2O3 材料'\n"
         "     n_results: 3\n"
         "     output_format: 'cif'\n\n"
         "2) 搜索包含 Li 和 O 的电池材料，给我全部信息：\n"
-        "   → Tool: structure_search_agent\n"
+        "   → Tool: fetch_structures_from_db\n"
         "     query: '搜索包含 Li 和 O 的电池材料'\n"
         "     n_results: 5\n"
         "     output_format: 'json'\n\n"
