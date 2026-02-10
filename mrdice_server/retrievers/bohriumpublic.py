@@ -148,6 +148,7 @@ class BohriumPublicRetriever(BaseRetriever):
             logging.error(f"Bohrium save failed: {exc}")
 
         results: List[SearchResult] = []
+        did_log_sample = False
         for i, struct in enumerate(items):
             struct_id = struct.get("id", f"idx{i}")
             name = f"bohriumcrystal_{struct_id}_{i}"
@@ -198,6 +199,18 @@ class BohriumPublicRetriever(BaseRetriever):
                 or crystal_ext.get("predicted_formation_energy")
                 or crystal_ext.get("formation_energy")
             )
+            if not did_log_sample:
+                did_log_sample = True
+                # High-signal one-shot debug log to validate field mapping.
+                _logger.info(
+                    "bohriumpublic sample map: id=%s formula=%s n_atoms=%s space_group=%s band_gap=%s crystal_ext_keys=%s",
+                    struct.get("id"),
+                    struct.get("formula") or struct.get("reduced_formula"),
+                    n_atoms,
+                    space_group,
+                    band_gap_val,
+                    sorted(list(crystal_ext.keys()))[:20],
+                )
             results.append(
                 self.create_crystal_search_result(
                     name=struct.get("name") or name,

@@ -16,6 +16,8 @@ class SearchResult(TypedDict, total=False):
     elements: List[str]
     space_group: Optional[str]
     n_atoms: Optional[int]
+    # Backward-compatible alias (some callers use atom_count)
+    atom_count: Optional[int]
     band_gap: Optional[float]
     formation_energy: Optional[float]
     source: Optional[str]
@@ -50,6 +52,7 @@ def normalize_result(
         "elements": elements or [],
         "space_group": space_group or None,
         "n_atoms": n_atoms,
+        "atom_count": n_atoms,
         "band_gap": band_gap,
         "formation_energy": formation_energy,
         "source": source or None,
