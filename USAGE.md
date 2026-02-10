@@ -38,6 +38,22 @@ python -m mrdice_server.server
 - **传输协议**: MCP Streamable HTTP (`streamable-http`)
 - **默认端口**: 50001
 - **默认主机**: 0.0.0.0（监听所有网络接口）
+- **MCP 端点**: `http://<host>:<port>/mcp`
+
+## Token 鉴权（可选）
+
+默认情况下服务端不鉴权。如果你想为 MCP 端点加一层简单的 token 鉴权（适合 UAT/内网），设置环境变量：
+
+- `MR_DICE_MCP_TOKEN=<your_token>`
+
+启用后：
+
+- **访问方式 1（URL 参数）**：`/mcp?token=<your_token>`
+- **访问方式 2（Header）**：`Authorization: Bearer <your_token>`
+
+示例：
+
+`https://structure-generator-uat-2-uuid1767842266.appspace.uat.bohrium.com/mcp?token=YOUR_TOKEN`
 
 ## 可用的工具
 

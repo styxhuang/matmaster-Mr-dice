@@ -11,6 +11,10 @@ from typing import Any, Dict, List, TypedDict
 
 from dotenv import load_dotenv
 from dp.agent.server import CalculationMCPServer
+from urllib.parse import parse_qs
+
+from starlette.routing import Route
+from starlette.types import Receive, Scope, Send
 
 def _load_env() -> None:
     """
@@ -203,16 +207,111 @@ except Exception:
     # Don't block server startup if logging binding fails
     pass
 
+# --- MCP transport auth (token) ---
+# If MR_DICE_MCP_TOKEN is set, we expose public endpoint `/mcp` that requires:
+#   - query param: ?token=...  (requested by some deployment platforms), OR
+#   - header: Authorization: Bearer ...
+#
+# Implementation detail: FastMCP's Streamable HTTP endpoint path is configurable.
+# When token auth is enabled, we mount the real MCP handler on an internal path
+# and expose `/mcp` as a proxy route that performs token validation first.
+MR_DICE_MCP_TOKEN = (os.getenv("MR_DICE_MCP_TOKEN") or "").strip()
+MR_DICE_MCP_PUBLIC_PATH = (os.getenv("MR_DICE_MCP_PUBLIC_PATH") or "/mcp").strip() or "/mcp"
+_internal_override = (os.getenv("MR_DICE_MCP_INTERNAL_PATH") or "").strip()
+if MR_DICE_MCP_TOKEN and not _internal_override:
+    # Generate an unguessable internal path so the public `/mcp` is the only practical entry.
+    _h = hashlib.sha1(MR_DICE_MCP_TOKEN.encode("utf-8")).hexdigest()[:12]
+    MR_DICE_MCP_INTERNAL_PATH = f"/__mrdice_mcp_{_h}"
+else:
+    MR_DICE_MCP_INTERNAL_PATH = _internal_override or "/__mrdice_mcp"
+
 mcp = CalculationMCPServer(
     "MrDiceServer",
     port=args.port,
-    host=args.host
+    host=args.host,
+    streamable_http_path=(MR_DICE_MCP_INTERNAL_PATH if MR_DICE_MCP_TOKEN else MR_DICE_MCP_PUBLIC_PATH),
 )
+
+if MR_DICE_MCP_TOKEN:
+    from mcp.server.fastmcp.server import StreamableHTTPASGIApp
+
+    class _TokenAuthStreamableHttpProxy:
+        """
+        ASGI endpoint mounted at MR_DICE_MCP_PUBLIC_PATH.
+
+        - Validates token from query param or Authorization header.
+        - Forwards request to FastMCP Streamable HTTP session manager.
+        """
+
+        def __init__(self, token: str):
+            self._token = token
+
+        @staticmethod
+        def _extract_token(scope: Scope) -> str | None:
+            # 1) query param token=...
+            try:
+                qs = (scope.get("query_string") or b"").decode("utf-8", errors="ignore")
+                token = (parse_qs(qs).get("token") or [None])[0]
+                if token:
+                    return str(token)
+            except Exception:
+                pass
+
+            # 2) Authorization: Bearer <token>
+            headers = scope.get("headers") or []
+            for k, v in headers:
+                if k.lower() == b"authorization":
+                    try:
+                        s = v.decode("utf-8", errors="ignore").strip()
+                    except Exception:
+                        s = ""
+                    if s.lower().startswith("bearer "):
+                        t = s[7:].strip()
+                        return t or None
+            return None
+
+        async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+            token = self._extract_token(scope)
+            if token != self._token:
+                body = json.dumps(
+                    {"error": "unauthorized", "message": "Invalid or missing token"},
+                    ensure_ascii=False,
+                ).encode("utf-8")
+                await send(
+                    {
+                        "type": "http.response.start",
+                        "status": 401,
+                        "headers": [
+                            (b"content-type", b"application/json; charset=utf-8"),
+                            (b"content-length", str(len(body)).encode()),
+                        ],
+                    }
+                )
+                await send({"type": "http.response.body", "body": body})
+                return
+
+            # FastMCP creates the session manager lazily when the streamable HTTP app is built.
+            # When we are called as a route inside that app, the session manager must exist.
+            inner = StreamableHTTPASGIApp(mcp.mcp.session_manager)
+            await inner(scope, receive, send)
+
+    # Mount proxy route (public path) after the internal MCP route.
+    # This route is only meaningful in streamable-http transport.
+    mcp.mcp._custom_starlette_routes.append(
+        Route(
+            MR_DICE_MCP_PUBLIC_PATH,
+            endpoint=_TokenAuthStreamableHttpProxy(MR_DICE_MCP_TOKEN),
+            methods=["GET", "POST", "OPTIONS"],
+            name="mcp_token_proxy",
+        )
+    )
 
 # Keys whose values should be masked when printing env (e.g. API keys, secrets)
 _ENV_MASK_KEYS = frozenset({
     "LLM_API_KEY", "MATERIALS_ACCESS_KEY",
     "OSS_ACCESS_KEY_ID", "OSS_ACCESS_KEY_SECRET",
+    "MR_DICE_MCP_TOKEN",
+    "MR_DICE_MCP_INTERNAL_PATH",
 })
 
 
@@ -228,6 +327,7 @@ def print_startup_env() -> None:
         "MATERIALS_ACCESS_KEY", "MATERIALS_PROJECT_ID", "MATERIALS_SKU_ID",
         "OSS_ENABLED", "OSS_BUCKET_NAME", "OSS_ACCESS_KEY_ID", "OSS_ACCESS_KEY_SECRET", "OSS_ENDPOINT",
         "DB_CORE_HOST", "BOHRIUM_CORE_HOST", "SERVER_URL",
+        "MR_DICE_MCP_TOKEN", "MR_DICE_MCP_PUBLIC_PATH",
     ]
     print("=== MrDice server env ===")
     for k in keys:
