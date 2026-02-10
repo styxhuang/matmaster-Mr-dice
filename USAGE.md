@@ -35,7 +35,7 @@ python -m mrdice_server.server
 
 ## 服务器信息
 
-- **传输协议**: MCP Streamable HTTP (`http-streamable`)
+- **传输协议**: MCP Streamable HTTP (`streamable-http`)
 - **默认端口**: 50001
 - **默认主机**: 0.0.0.0（监听所有网络接口）
 
@@ -76,17 +76,17 @@ MrDice 服务器使用 MCP (Model Context Protocol) 协议，可以通过支持 
       "-m",
       "mrdice_server.server"
     ],
-    "transport": "http-streamable"
+    "transport": "streamable-http"
   }
 }
 ```
 
 ### 2. 通过 HTTP（Streamable）直接访问
 
-服务器启动后，可以通过 MCP Streamable HTTP 端点访问（具体路径由 MCP 运行时决定；客户端通常只需要配置 base URL）：
+服务器启动后，可以通过 MCP Streamable HTTP 端点访问（FastMCP 默认路径是 `/mcp`）：
 
 ```
-http://localhost:50001
+http://localhost:50001/mcp
 ```
 
 ### 3. 测试工具调用

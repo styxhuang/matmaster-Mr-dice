@@ -12,5 +12,5 @@ if __name__ == "__main__":
 
     print_startup_env()
     logging.info("Starting MrDice Unified MCP Server...")
-    mcp.run(transport="http-streamable")
+    mcp.run(transport="streamable-http")
 

@@ -537,4 +537,4 @@ async def fetch_structures_from_db(
 if __name__ == "__main__":
     print_startup_env()
     logger.info("Starting MrDice Unified MCP Server...")
-    mcp.run(transport="http-streamable")
+    mcp.run(transport="streamable-http")
