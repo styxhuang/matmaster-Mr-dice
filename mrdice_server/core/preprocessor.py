@@ -339,24 +339,26 @@ def preprocess_query(query: str) -> Dict[str, Any]:
         target_databases = _detect_target_databases(query)
 
     # If user explicitly mentions a MOF sub-database (e.g. CoREMOF 2019, hMOF),
-    # add a database filter for MOFdb SQL and ensure we only hit MOFdb.
+    # add a database filter and ensure we only hit MOFdb—unless this is a
+    # cross-database comparison (multiple target_databases), then keep all.
     lower = query.lower()
-    if "coremof 2019" in lower:
-        filters = dict(filters)
-        filters["database"] = "CoREMOF 2019"
-        target_databases = ["mofdbsql"]
-    elif "coremof 2014" in lower:
-        filters = dict(filters)
-        filters["database"] = "CoREMOF 2014"
-        target_databases = ["mofdbsql"]
-    elif "coremof" in lower or "core mof" in lower:
-        filters = dict(filters)
-        filters["database"] = "CoREMOF"
-        target_databases = ["mofdbsql"]
-    elif "hmof" in lower or "h mof" in lower:
-        filters = dict(filters)
-        filters["database"] = "hMOF"
-        target_databases = ["mofdbsql"]
+    if len(target_databases) <= 1:
+        if "coremof 2019" in lower:
+            filters = dict(filters)
+            filters["database"] = "CoREMOF 2019"
+            target_databases = ["mofdbsql"]
+        elif "coremof 2014" in lower:
+            filters = dict(filters)
+            filters["database"] = "CoREMOF 2014"
+            target_databases = ["mofdbsql"]
+        elif "coremof" in lower or "core mof" in lower:
+            filters = dict(filters)
+            filters["database"] = "CoREMOF"
+            target_databases = ["mofdbsql"]
+        elif "hmof" in lower or "h mof" in lower:
+            filters = dict(filters)
+            filters["database"] = "hMOF"
+            target_databases = ["mofdbsql"]
 
     return {
         "material_type": material_type,

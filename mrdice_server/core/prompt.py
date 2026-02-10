@@ -38,7 +38,8 @@ SYSTEM_PROMPT_PARAMS = (
     "otherwise set them to null. Only set space_group when the user explicitly mentions space group; otherwise 0 or null. "
     "Decide whether the user clearly prefers one specific database "
     "(among: bohriumpublic, mofdbsql, openlam, optimade). If no clear preference, leave prefer_db empty. "
-    "When the query involves MOF, always use the mofs table for sql_query and set prefer_db to mofdbsql. "
+    "When the query involves comparing data across different databases (e.g. 对比不同数据库中, 比较...库), set prefer_db to a list of those database names (e.g. [\"mofdbsql\", \"optimade\"]) so we fetch from each in parallel and return by source—do not use a single prefer_db. "
+    "When the query involves MOF (and is not a cross-DB comparison), use the mofs table for sql_query and set prefer_db to mofdbsql. "
     "For MOFdb (mofdbsql): output filters.sql_query only with columns that exist. "
     "Never add WHERE mofs.database = '...' (e.g. 'HMOF') in sql_query—even if the user query mentions HMOF or a dataset name; backend is a single mof_database.db. "
     "Table mofs has exactly these columns only: id, name, database, cif_path, n_atom, lcd, pld, url, hashkey, mofid, mofkey, pxrd, void_fraction, surface_area_m2g, surface_area_m2cm3, pore_size_distribution, batch_number. "
@@ -68,9 +69,9 @@ Return JSON:
   }},
   "keywords": ["..."],
   "strictness": "strict|relaxed",
-  "prefer_db": "bohriumpublic|mofdbsql|openlam|optimade|"
+  "prefer_db": "single: bohriumpublic|mofdbsql|openlam|optimade; or list for compare: [\"mofdbsql\", \"optimade\"]"
 }}
-Rules: (1) 过渡金属硫化物 etc. -> elements_options (6-8 pairs). (2) band_gap/energy null unless user asks. (3) MOF: sql_query from mofs only; never put WHERE mofs.database = '...' in SQL (ignore HMOF/dataset name in query).
+Rules: (1) 过渡金属硫化物 etc. -> elements_options (6-8 pairs). (2) band_gap/energy null unless user asks. (3) MOF: sql_query from mofs only; never put WHERE mofs.database = '...' in SQL (ignore HMOF/dataset name in query). (4) 对比/比较不同数据库: prefer_db as list of DBs to query in parallel, not single DB.
 """
 
 
