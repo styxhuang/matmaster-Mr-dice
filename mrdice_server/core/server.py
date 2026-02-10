@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import hashlib
 import json
 import logging
@@ -32,7 +33,7 @@ def _load_env() -> None:
 _load_env()
 
 from .config import DEFAULT_N_RESULTS, DEFAULT_OUTPUT_FORMAT, MAX_N_RESULTS, get_bohrium_output_dir, get_data_dir
-from .preprocessor import preprocess_query
+from .preprocessor import preprocess_query, relax_to_element_only_filter
 from ..search.ranker import rank_results
 from ..search.router import normalize_n_results
 from ..models.schema import build_response, SearchResult
@@ -294,28 +295,99 @@ async def fetch_structures_from_db(
         db_names,
         json.dumps(_effective, ensure_ascii=False),
     )
-    
+
+    # Resolve elements_options -> multiple queries, then merge (e.g. 过渡金属硫化物: S+Ti, S+V, S+Mo, ...)
+    elements_options = filters.pop("elements_options", None)
+    if elements_options and isinstance(elements_options, list):
+        options = []
+        for opt in elements_options[:8]:
+            if isinstance(opt, list) and opt:
+                options.append([str(x).strip() for x in opt if str(x).strip()])
+        if options:
+            elements_options = [o for o in options if o]
+        else:
+            elements_options = None
+    if elements_options:
+        filters["elements"] = filters.get("elements") or []
+
     # === SEARCH EXECUTION ===
-    # No degradation / retry strategy: query once with preprocessed filters.
     all_results: List[SearchResult] = []
     fallback_level = 0
     errors: Dict[str, str] = {}
-    try:
-        db_results, errors = await search_databases_parallel_with_errors(
-            db_names=db_names,
-            filters=filters,
-            n_results=n_results,
-            output_format=output_format,
-        )
-        for _db_name, _results in db_results.items():
-            all_results.extend(_results)
-        if all_results:
-            logger.info(f"Found {len(all_results)} results")
-    except Exception as e:
-        # Unexpected top-level failure (should be rare because per-DB errors are captured)
-        logger.error(f"Parallel search failed: {e}")
-        errors = {"search": str(e)}
-    
+    if elements_options:
+        n_per = max(1, (n_results + len(elements_options) - 1) // len(elements_options))
+        logger.info("Querying %s element options (n_per=%s): %s", len(elements_options), n_per, elements_options)
+        try:
+            async def _search_one_option(elem_list: List[str]):
+                f = {**filters, "elements": elem_list}
+                return await search_databases_parallel_with_errors(
+                    db_names=db_names,
+                    filters=f,
+                    n_results=n_per,
+                    output_format=output_format,
+                )
+            gathered = await asyncio.gather(*[_search_one_option(opt) for opt in elements_options])
+            seen_keys: set = set()
+            for db_results_i, errs_i in gathered:
+                if errs_i:
+                    for k, v in errs_i.items():
+                        errors[f"{k}"] = errors.get(k, "") + ("; " if errors.get(k) else "") + v
+                for _db_name, _results in db_results_i.items():
+                    for r in _results:
+                        key = (r.get("source") or "", r.get("id") or r.get("name") or "")
+                        if key not in seen_keys:
+                            seen_keys.add(key)
+                            all_results.append(r)
+            if all_results:
+                logger.info("Merged %s results from %s element options", len(all_results), len(elements_options))
+        except Exception as e:
+            logger.error("Element-options search failed: %s", e)
+            errors["search"] = str(e)
+        filters["elements"] = elements_options[0]
+    else:
+        try:
+            db_results, errors = await search_databases_parallel_with_errors(
+                db_names=db_names,
+                filters=filters,
+                n_results=n_results,
+                output_format=output_format,
+            )
+            for _db_name, _results in db_results.items():
+                all_results.extend(_results)
+            if all_results:
+                logger.info(f"Found {len(all_results)} results")
+        except Exception as e:
+            logger.error(f"Parallel search failed: {e}")
+            errors = {"search": str(e)}
+
+    # === FALLBACK: zero results -> relax to element-only filter and retry ===
+    if len(all_results) == 0:
+        relaxed_filters, relaxed_query = relax_to_element_only_filter(query, filters)
+        if relaxed_filters and relaxed_filters.get("elements"):
+            logger.info(
+                "No results; retrying with element-only filter: elements=%s",
+                relaxed_filters.get("elements"),
+            )
+            try:
+                db_results_2, errors_2 = await search_databases_parallel_with_errors(
+                    db_names=db_names,
+                    filters=relaxed_filters,
+                    n_results=n_results,
+                    output_format=output_format,
+                )
+                for _db_name, _results in db_results_2.items():
+                    all_results.extend(_results)
+                if errors_2:
+                    errors["relaxed_search"] = "; ".join(f"{k}: {v}" for k, v in errors_2.items())
+                if all_results:
+                    fallback_level = 1
+                    filters = relaxed_filters
+                    if relaxed_query:
+                        expanded_query = relaxed_query
+                    logger.info("Relaxed search found %s results", len(all_results))
+            except Exception as e:
+                logger.warning("Relaxed search failed: %s", e)
+
     # === POSTPROCESSING ===
     # Step 4: Rank and format results
     ranked = rank_results(

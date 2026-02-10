@@ -12,9 +12,11 @@ from .prompt import (
     SYSTEM_PROMPT_CORRECT,
     SYSTEM_PROMPT_INTENT,
     SYSTEM_PROMPT_PARAMS,
+    SYSTEM_PROMPT_RELAX_ELEMENTS,
     USER_PROMPT_CORRECT_TEMPLATE,
     USER_PROMPT_INTENT_TEMPLATE,
     USER_PROMPT_PARAMS_TEMPLATE,
+    USER_PROMPT_RELAX_ELEMENTS_TEMPLATE,
 )
 
 
@@ -245,6 +247,55 @@ def correct_parameters(
     
     # Fallback: return original params
     return params, False, "Correction not available"
+
+
+def relax_to_element_only_filter(
+    query: str,
+    original_filters: Dict[str, Any],
+) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """
+    When the first search returns no results, use LLM to build a relaxed filter
+    that uses only element symbols (e.g. expand 稀土/过渡金属 to concrete elements).
+
+    Returns:
+        Tuple of (new_filters, expanded_query) or (None, None) on failure.
+    """
+    user_prompt = USER_PROMPT_RELAX_ELEMENTS_TEMPLATE.format(
+        query=query,
+        params=json.dumps(original_filters, ensure_ascii=False),
+    )
+    try:
+        raw = chat_json(SYSTEM_PROMPT_RELAX_ELEMENTS, user_prompt, timeout=25)
+        if os.getenv("LLM_DEBUG") == "1":
+            logging.info("LLM relax-elements output: %s", raw)
+        json_text = _strip_json(raw)
+        data = _safe_json_loads(json_text)
+        if not isinstance(data, dict):
+            return None, None
+        filters = data.get("filters")
+        if not isinstance(filters, dict):
+            return None, None
+        elements = filters.get("elements")
+        if not elements or not isinstance(elements, list):
+            return None, None
+        # Ensure only valid element-like strings
+        elements = [str(x).strip() for x in elements if str(x).strip()]
+        if not elements:
+            return None, None
+        # Build clean element-only filters (no formula, neutral space_group/band_gap/energy)
+        new_filters = {
+            "formula": "",
+            "elements": elements,
+            "space_group": 0,
+            "band_gap": {"min": 0.0, "max": 0.0},
+            "energy": {"min": 0.0, "max": 0.0},
+            "time_range": {"start": "", "end": ""},
+        }
+        expanded = (data.get("expanded_query") or "").strip() or None
+        return new_filters, expanded
+    except LlmError as e:
+        logging.warning("LLM relax-to-elements failed: %s", e)
+        return None, None
 
 
 def preprocess_query(query: str) -> Dict[str, Any]:

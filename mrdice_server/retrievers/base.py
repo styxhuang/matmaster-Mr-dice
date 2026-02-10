@@ -41,11 +41,11 @@ class BaseRetriever:
             s = value.strip()
             if not s:
                 return None
-            if s.lower() in {"n/a", "na", "none", "null", "nan"}:
+            if s in {"-", "+"} or s.lower() in {"n/a", "na", "none", "null", "nan"}:
                 return None
             try:
                 return float(s)
-            except Exception:
+            except (ValueError, TypeError):
                 return None
         return None
 

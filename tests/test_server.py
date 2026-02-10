@@ -12,7 +12,7 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from mrdice_server.core.server import structure_search_agent
+from mrdice_server.core.server import fetch_structures_from_db
 
 
 def _format_duration(seconds: float) -> str:
@@ -66,7 +66,7 @@ async def test_search():
         t0 = time.perf_counter()
         
         try:
-            result = await structure_search_agent(
+            result = await fetch_structures_from_db(
                 query=query,
                 n_results=6,
                 output_format="cif"

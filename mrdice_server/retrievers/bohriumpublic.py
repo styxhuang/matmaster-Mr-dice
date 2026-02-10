@@ -10,7 +10,10 @@ import requests
 
 from .base import BaseRetriever
 from ..core.config import get_bohrium_output_dir
+from ..core.logger import get_logger
 from ..models.schema import SearchResult
+
+_logger = get_logger("mrdice")
 
 
 def _import_bohrium_utils():
@@ -56,6 +59,7 @@ class BohriumPublicRetriever(BaseRetriever):
         return self._utils
 
     def fetch(self, filters: Dict[str, Any], n_results: int, output_format: str) -> List[SearchResult]:
+        _logger.info("Querying bohriumpublic (n_results=%s)", n_results)
         utils = self._get_utils()
         DB_CORE_HOST = utils["DB_CORE_HOST"]
         SPACEGROUP_UNICODE = utils["SPACEGROUP_UNICODE"]
@@ -82,21 +86,27 @@ class BohriumPublicRetriever(BaseRetriever):
             else:
                 logging.warning(f"Unknown space group number: {spacegroup_number}")
 
-        band_gap_range = None
-        if band_gap.get("min") is not None or band_gap.get("max") is not None:
-            band_gap_range = [
-                str(band_gap.get("min") if band_gap.get("min") is not None else 0),
-                str(band_gap.get("max") if band_gap.get("max") is not None else 100),
+        # Only add band_gap_range when it is a real range (not both 0 or both None).
+        band_gap_min = band_gap.get("min")
+        band_gap_max = band_gap.get("max")
+        if (band_gap_min is not None or band_gap_max is not None) and not (
+            (band_gap_min is None or band_gap_min == 0) and (band_gap_max is None or band_gap_max == 0)
+        ):
+            payload_filters["band_gap_range"] = [
+                str(band_gap_min if band_gap_min is not None else 0),
+                str(band_gap_max if band_gap_max is not None else 100),
             ]
-            payload_filters["band_gap_range"] = band_gap_range
 
-        predicted_formation_energy_range = None
-        if energy.get("min") is not None or energy.get("max") is not None:
-            predicted_formation_energy_range = [
-                str(energy.get("min") if energy.get("min") is not None else -100),
-                str(energy.get("max") if energy.get("max") is not None else 100),
+        # Only add predicted_formation_energy_range when it is a real range (not both 0 or both None).
+        energy_min = energy.get("min")
+        energy_max = energy.get("max")
+        if (energy_min is not None or energy_max is not None) and not (
+            (energy_min is None or energy_min == 0) and (energy_max is None or energy_max == 0)
+        ):
+            payload_filters["predicted_formation_energy_range"] = [
+                str(energy_min if energy_min is not None else -100),
+                str(energy_max if energy_max is not None else 100),
             ]
-            payload_filters["predicted_formation_energy_range"] = predicted_formation_energy_range
 
         headers = {
             "X-User-Id": x_user_id,

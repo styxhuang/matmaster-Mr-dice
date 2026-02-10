@@ -63,17 +63,26 @@ RULES = {
         "limit": "Automatically adds LIMIT clause based on n_results",
     },
     "database_schema": {
-        "main_tables": [
-            "mofs: id, name, database, cif_path, n_atom, lcd, pld, url, hashkey, "
-            "mofid, mofkey, pxrd, void_fraction, surface_area_m2g, surface_area_m2cm3, "
-            "pore_size_distribution, batch_number"
+        "mofs_columns_only": [
+            "id", "name", "database", "cif_path", "n_atom", "lcd", "pld",
+            "url", "hashkey", "mofid", "mofkey", "pxrd", "void_fraction",
+            "surface_area_m2g", "surface_area_m2cm3", "pore_size_distribution", "batch_number"
         ],
+        "mofs_has_no": "topology, coordination_number, framework_dimensionality, co2_adsorption_mmolg, any adsorption column, selectivity (e.g. CH4/N2); use only filterable mofs columns, selectivity requires post-processing",
+        "element_search": "elements: mof_id, element_symbol, n_atom; JOIN mofs ON mofs.id = elements.mof_id",
         "related_tables": [
-            "isotherms: adsorption data",
-            "heats: heat of adsorption data",
+            "isotherms: adsorption data (not in mofs)",
+            "heats: heat of adsorption data (not in mofs)",
         ],
     },
 }
+
+# Canonical list of mofs table columns (must match mof_database.db)
+MOFS_TABLE_COLUMNS = (
+    "id", "name", "database", "cif_path", "n_atom", "lcd", "pld",
+    "url", "hashkey", "mofid", "mofkey", "pxrd", "void_fraction",
+    "surface_area_m2g", "surface_area_m2cm3", "pore_size_distribution", "batch_number"
+)
 
 # 输出格式
 SUPPORTED_OUTPUT_FORMATS = ["cif", "json"]

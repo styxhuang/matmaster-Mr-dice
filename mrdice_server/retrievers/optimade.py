@@ -132,6 +132,14 @@ class OptimadeRetriever(BaseRetriever):
                 error_type=ErrorType.NETWORK_ERROR,
                 details={"total_timeout": total_timeout},
             ) from None
+        except ValueError as e:
+            if "could not convert string to float" in str(e):
+                logging.warning(
+                    "OPTIMADE provider returned non-numeric value (e.g. '-' for missing data), skipping: %s",
+                    e,
+                )
+                return []
+            raise
 
         cleaned_structures = fetch_result.get("cleaned_structures", []) or []
         saved_files = fetch_result.get("files", []) or []

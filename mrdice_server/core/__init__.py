@@ -23,6 +23,7 @@ from .preprocessor import (
     correct_parameters,
     preprocess_query,
     recognize_intent,
+    relax_to_element_only_filter,
 )
 from .server import mcp, fetch_structures_from_db
 
@@ -46,6 +47,7 @@ __all__ = [
     "construct_parameters",
     "correct_parameters",
     "preprocess_query",
+    "relax_to_element_only_filter",
     # Postprocessing
     "DegradationRecord",
     "degrade_filters",

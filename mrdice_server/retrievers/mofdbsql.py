@@ -9,7 +9,10 @@ from typing import Any, Dict, List
 
 from .base import BaseRetriever
 from ..core.config import get_data_dir
+from ..core.logger import get_logger
 from ..models.schema import SearchResult
+
+_logger = get_logger("mrdice")
 
 
 def _import_mofdb_utils():
@@ -66,6 +69,7 @@ class MofdbSqlRetriever(BaseRetriever):
         return self._db_path
 
     def fetch(self, filters: Dict[str, Any], n_results: int, output_format: str) -> List[SearchResult]:
+        _logger.info("Querying mofdbsql (n_results=%s)", n_results)
         utils = self._get_utils()
         validate_sql_security = utils["validate_sql_security"]
         save_mofs = utils["save_mofs"]
@@ -73,8 +77,8 @@ class MofdbSqlRetriever(BaseRetriever):
         build_output_stem = utils["build_output_stem"]
         base_data_dir = utils.get("base_data_dir")
 
-        # Extract SQL query from filters
-        sql_query = filters.get("sql_query")
+        # Extract SQL query from filters (accept both "sql" and "sql_query")
+        sql_query = filters.get("sql_query") or filters.get("sql")
         if not sql_query:
             # If no SQL query, construct a simple query from other filters
             sql_query = self._build_sql_from_filters(filters, n_results)
@@ -179,8 +183,8 @@ class MofdbSqlRetriever(BaseRetriever):
         
         formula = filters.get("formula")
         elements = filters.get("elements")
-        database = filters.get("database")
-        
+        # Do not add mofs.database = '...': backend is a single mof_database.db, not per-source DBs.
+
         if formula:
             # Map formula filter to name column to avoid referencing non-existent formula column
             conditions.append(f"name LIKE '%{formula}%'")
@@ -194,9 +198,6 @@ class MofdbSqlRetriever(BaseRetriever):
             ]
             if element_conditions:
                 conditions.append(f"({' AND '.join(element_conditions)})")
-        
-        if database:
-            conditions.append(f"database = '{database}'")
         
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         sql = f"SELECT * FROM mofs {where_clause} LIMIT {n_results}"
