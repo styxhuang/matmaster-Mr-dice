@@ -112,6 +112,23 @@ def _detect_target_databases(query: str) -> List[str]:
     return targets
 
 
+def _wants_band_gap(query: str) -> bool:
+    """
+    Heuristic: user explicitly asks for band gap values (not just filtering).
+    Used to set a sensible default range so we avoid returning many N/A gaps.
+    """
+    if not query:
+        return False
+    lower = query.lower()
+    return (
+        ("band gap" in lower)
+        or ("bandgap" in lower)
+        or ("带隙" in query)
+        or ("禁带" in query)
+        or ("能隙" in query)
+    )
+
+
 def recognize_intent(query: str) -> Dict[str, Any]:
     """
     Recognize material domain and type from query.
@@ -359,6 +376,25 @@ def preprocess_query(query: str) -> Dict[str, Any]:
             filters = dict(filters)
             filters["database"] = "hMOF"
             target_databases = ["mofdbsql"]
+
+    # If the user explicitly asked for band gap values but didn't provide a numeric
+    # range, set a tiny positive default min to reduce "N/A" band gap entries.
+    # Do NOT apply to MOF-only intents.
+    if material_type != "mof" and _wants_band_gap(query):
+        bg = filters.get("band_gap")
+        if bg is None:
+            filters = dict(filters)
+            filters["band_gap"] = {"min": 0.01, "max": None}
+        elif isinstance(bg, dict):
+            bg_min = bg.get("min")
+            bg_max = bg.get("max")
+            # Only fill defaults when both ends are effectively unspecified.
+            if (bg_min is None or bg_min == "") and (bg_max is None or bg_max == ""):
+                new_bg = dict(bg)
+                new_bg["min"] = 0.01
+                new_bg["max"] = None
+                filters = dict(filters)
+                filters["band_gap"] = new_bg
 
     return {
         "material_type": material_type,
