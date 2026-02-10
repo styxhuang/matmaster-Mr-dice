@@ -152,12 +152,51 @@ class BohriumPublicRetriever(BaseRetriever):
             struct_id = struct.get("id", f"idx{i}")
             name = f"bohriumcrystal_{struct_id}_{i}"
             structure_file = self.build_structure_file_path(output_dir, name, output_format, check_exists=True)
-            elements_list = struct.get("elements") or []
-            space_group = struct.get("space_symbol") or struct.get("space_group") or None
-            n_atoms = struct.get("atomCount") or struct.get("atom_count")
-            band_gap_val = struct.get("band_gap") or struct.get("crystal_ext", {}).get("band_gap")
-            formation_energy = struct.get("predicted_formation_energy") or struct.get("crystal_ext", {}).get(
-                "predicted_formation_energy"
+            crystal_ext = struct.get("crystal_ext") if isinstance(struct, dict) else None
+            if not isinstance(crystal_ext, dict):
+                crystal_ext = {}
+
+            # Bohrium API fields vary; prefer explicit list if present.
+            elements_list = (
+                struct.get("elements")
+                or struct.get("formula_elements")
+                or struct.get("formulaElements")
+                or []
+            )
+
+            # Observed in practice: `crystal_ext.symbol` holds space group (e.g. "R3̅c").
+            space_group = (
+                struct.get("space_symbol")
+                or struct.get("space_group")
+                or struct.get("spaceGroup")
+                or crystal_ext.get("symbol")
+                or crystal_ext.get("space_symbol")
+                or crystal_ext.get("space_group")
+                or None
+            )
+
+            # Observed in practice: `crystal_ext.number_of_atoms`.
+            n_atoms = (
+                struct.get("atomCount")
+                or struct.get("atom_count")
+                or struct.get("number_of_atoms")
+                or crystal_ext.get("number_of_atoms")
+                or crystal_ext.get("atomCount")
+                or crystal_ext.get("atom_count")
+            )
+
+            band_gap_val = (
+                struct.get("band_gap")
+                or struct.get("bandGap")
+                or crystal_ext.get("band_gap")
+                or crystal_ext.get("bandGap")
+            )
+
+            formation_energy = (
+                struct.get("predicted_formation_energy")
+                or struct.get("formation_energy")
+                or crystal_ext.get("predicted_formation_energy")
+                or crystal_ext.get("formation_energy")
             )
             results.append(
                 self.create_crystal_search_result(
