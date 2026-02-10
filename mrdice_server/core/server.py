@@ -40,6 +40,70 @@ from ..models.schema import build_response, SearchResult
 from ..search.searcher import ALL_DATABASE_NAMES, search_databases_parallel_with_errors
 
 
+def _merge_results_multi_db(
+    db_results: Dict[str, List[SearchResult]],
+    db_names: List[str],
+) -> List[SearchResult]:
+    """
+    Merge results from multiple DBs in round-robin order so each source appears
+    interleaved; avoids returning one DB's results in a single block.
+    """
+    lists = [db_results.get(db, []) for db in db_names]
+    out: List[SearchResult] = []
+    idx = 0
+    while True:
+        added = 0
+        for L in lists:
+            if idx < len(L):
+                out.append(L[idx])
+                added += 1
+        if added == 0:
+            break
+        idx += 1
+    return out
+
+
+def _take_n_results_with_sources(
+    ranked: List[SearchResult],
+    n_results: int,
+    db_names: List[str],
+) -> List[SearchResult]:
+    """
+    Take up to n_results from ranked, ensuring at least one result from each
+    requested DB that appears in ranked (so returned list includes all DBs).
+    """
+    if not ranked or n_results <= 0:
+        return []
+    if len(db_names) <= 1:
+        return ranked[:n_results]
+    # Ensure one from each source first, then fill by rank
+    by_source: Dict[str, List[SearchResult]] = {}
+    for r in ranked:
+        src = (r.get("source") or "").strip() or "unknown"
+        if src not in by_source:
+            by_source[src] = []
+        by_source[src].append(r)
+    chosen_ids: set = set()
+    out: List[SearchResult] = []
+
+    def add_one(r: SearchResult) -> bool:
+        key = (r.get("source"), r.get("id"), r.get("name"))
+        if key in chosen_ids:
+            return False
+        chosen_ids.add(key)
+        out.append(r)
+        return True
+
+    for db in db_names:
+        if db in by_source and by_source[db]:
+            add_one(by_source[db][0])
+    for r in ranked:
+        if len(out) >= n_results:
+            break
+        add_one(r)
+    return out[:n_results]
+
+
 class MrDiceToolResult(TypedDict):
     # --- OPTIMADE MCP compatible keys ---
     output_dir: str
@@ -352,8 +416,11 @@ async def fetch_structures_from_db(
                 n_results=n_results,
                 output_format=output_format,
             )
-            for _db_name, _results in db_results.items():
-                all_results.extend(_results)
+            if len(db_names) > 1:
+                all_results = _merge_results_multi_db(db_results, db_names)
+            else:
+                for _db_name, _results in db_results.items():
+                    all_results.extend(_results)
             if all_results:
                 logger.info(f"Found {len(all_results)} results")
         except Exception as e:
@@ -375,8 +442,11 @@ async def fetch_structures_from_db(
                     n_results=n_results,
                     output_format=output_format,
                 )
-                for _db_name, _results in db_results_2.items():
-                    all_results.extend(_results)
+                if len(db_names) > 1:
+                    all_results = _merge_results_multi_db(db_results_2, db_names)
+                else:
+                    for _db_name, _results in db_results_2.items():
+                        all_results.extend(_results)
                 if errors_2:
                     errors["relaxed_search"] = "; ".join(f"{k}: {v}" for k, v in errors_2.items())
                 if all_results:
@@ -397,8 +467,10 @@ async def fetch_structures_from_db(
         elements=filters.get("elements") or [],
         keywords=keywords,
     )
-    
-    ranked = ranked[:n_results]
+    if len(db_names) > 1:
+        ranked = _take_n_results_with_sources(ranked, n_results, db_names)
+    else:
+        ranked = ranked[:n_results]
 
     def _count_by_source(items: List[SearchResult]) -> Dict[str, int]:
         counts: Dict[str, int] = {}
