@@ -35,7 +35,7 @@ python -m mrdice_server.server
 
 ## 服务器信息
 
-- **传输协议**: SSE (Server-Sent Events)
+- **传输协议**: MCP Streamable HTTP (`http-streamable`)
 - **默认端口**: 50001
 - **默认主机**: 0.0.0.0（监听所有网络接口）
 
@@ -76,17 +76,17 @@ MrDice 服务器使用 MCP (Model Context Protocol) 协议，可以通过支持 
       "-m",
       "mrdice_server.server"
     ],
-    "transport": "sse"
+    "transport": "http-streamable"
   }
 }
 ```
 
-### 2. 通过 HTTP/SSE 直接访问
+### 2. 通过 HTTP（Streamable）直接访问
 
-服务器启动后，可以通过 SSE 端点访问：
+服务器启动后，可以通过 MCP Streamable HTTP 端点访问（具体路径由 MCP 运行时决定；客户端通常只需要配置 base URL）：
 
 ```
-http://localhost:50001/sse
+http://localhost:50001
 ```
 
 ### 3. 测试工具调用
@@ -118,11 +118,12 @@ if __name__ == "__main__":
     asyncio.run(test_search())
 ```
 
-### 4. 使用 curl 测试 SSE 连接
+### 4. 使用 curl 测试连接（Streamable HTTP）
 
 ```bash
-# 连接到 SSE 端点
-curl -N http://localhost:50001/sse
+# 说明：Streamable HTTP 通常需要 MCP 客户端按协议发起请求；
+# 这里仅用于确认端口可连通
+curl -I http://localhost:50001
 ```
 
 ## 工作流程

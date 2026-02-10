@@ -2,7 +2,7 @@
 MrDice ADK Agent entrypoint (client-side).
 
 This module defines a Google ADK `root_agent` that connects to the running MrDice MCP server
-over SSE (`SERVER_URL`) and can call the unified tool `fetch_structures_from_db`.
+over MCP Streamable HTTP (`SERVER_URL`) and can call the unified tool `fetch_structures_from_db`.
 
 Notes
 -----
@@ -85,7 +85,11 @@ except Exception:
 try:
     from google.adk.agents import LlmAgent
     from google.adk.models.lite_llm import LiteLlm
-    from google.adk.tools.mcp_tool.mcp_session_manager import SseServerParams
+    # Prefer Streamable HTTP transport (newer MCP standard), fallback to SSE for older ADK versions.
+    try:  # pragma: no cover
+        from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHttpServerParams as _ServerParams
+    except Exception:  # pragma: no cover
+        from google.adk.tools.mcp_tool.mcp_session_manager import SseServerParams as _ServerParams
 
     from dp.agent.adapter.adk import CalculationMCPToolset
 except ImportError as exc:  # pragma: no cover
@@ -132,7 +136,7 @@ if not server_url:
 
 # === Initialize MCP Toolset ===
 mcp_tools = CalculationMCPToolset(
-    connection_params=SseServerParams(url=server_url),
+    connection_params=_ServerParams(url=server_url),
     storage=HTTPS_STORAGE,
 )
 
