@@ -619,9 +619,17 @@ async def fetch_structures_from_db(
     # handle_output_artifacts can upload them to storage (Bohrium/OSS) and
     # replace with URIs when the agent is run with storage configured
     # (e.g. CalculationMCPToolset(storage=HTTPS_STORAGE)).
+    #
+    # If MR_DICE_DISABLE_ARTIFACT_UPLOAD=1, we return plain strings to prevent
+    # dp.agent from attempting artifact upload (useful when storage credentials
+    # are unavailable/invalid and you still want the search result to succeed).
+    _disable_artifact_upload = (os.getenv("MR_DICE_DISABLE_ARTIFACT_UPLOAD") or "").strip() in {"1", "true", "True"}
+    _out_dir_value: Any = str(output_dir) if _disable_artifact_upload else output_dir
+    _files_value: Any = [str(p) for p in files] if _disable_artifact_upload else files
+
     resp.update(
         {
-            "output_dir": output_dir,
+            "output_dir": _out_dir_value,
             "cleaned_structures": ranked,
             # Treat "Success" strictly: only when no errors and found structures.
             # If some sources failed but we still found results, return a non-zero code and a partial message.
@@ -639,7 +647,7 @@ async def fetch_structures_from_db(
                     else ("No results" if not errors else "No results (see errors)")
                 )
             ),
-            "files": files,
+            "files": _files_value,
             "by_source_found": by_source_found,
             "by_source": by_source,
             "errors": errors,
