@@ -623,8 +623,22 @@ async def fetch_structures_from_db(
         {
             "output_dir": output_dir,
             "cleaned_structures": ranked,
-            "code": 0 if len(all_results) > 0 else -9999,
-            "message": "Success" if len(all_results) > 0 else ("No results" if not errors else "No results (see errors)"),
+            # Treat "Success" strictly: only when no errors and found structures.
+            # If some sources failed but we still found results, return a non-zero code and a partial message.
+            "code": (
+                0
+                if (len(all_results) > 0 and not any((str(v or "").strip() for v in (errors or {}).values())))
+                else (1 if len(all_results) > 0 else (-9999 if not errors else -9998))
+            ),
+            "message": (
+                "Success"
+                if (len(all_results) > 0 and not any((str(v or "").strip() for v in (errors or {}).values())))
+                else (
+                    "Partial success (see errors)"
+                    if len(all_results) > 0
+                    else ("No results" if not errors else "No results (see errors)")
+                )
+            ),
             "files": files,
             "by_source_found": by_source_found,
             "by_source": by_source,

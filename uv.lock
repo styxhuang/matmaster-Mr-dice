@@ -505,7 +505,7 @@ wheels = [
 [[package]]
 name = "bohrium-agents"
 version = "0.1.0"
-source = { directory = "../../bohrium-agents" }
+source = { directory = "../../../bohrium-agents" }
 dependencies = [
     { name = "ag-ui-protocol" },
     { name = "aiofiles" },
@@ -3616,7 +3616,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "black", marker = "extra == 'dev'", specifier = ">=23.0.0" },
-    { name = "bohrium-agents", directory = "../../bohrium-agents" },
+    { name = "bohrium-agents", directory = "../../../bohrium-agents" },
     { name = "bohrium-open-sdk", specifier = ">=1.0.0" },
     { name = "bohrium-sdk", specifier = ">=0.15.0" },
     { name = "dpdispatcher", specifier = ">=1.0.0" },
