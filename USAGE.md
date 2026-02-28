@@ -39,6 +39,7 @@ python -m mrdice_server.server
 - **默认端口**: 50001
 - **默认主机**: 0.0.0.0（监听所有网络接口）
 - **MCP 端点**: `http://<host>:<port>/mcp`
+- **路径可配置**: 服务端可通过环境变量 `MR_DICE_MCP_PUBLIC_PATH` 修改路径（默认 `/mcp`）。若反向代理只转发到后端根路径，可在服务端设置 `MR_DICE_MCP_PUBLIC_PATH=/`，客户端 `SERVER_URL` 使用 `http://<host>:<port>/`。
 
 ## Token 鉴权（可选）
 

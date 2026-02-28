@@ -207,70 +207,73 @@ except Exception:
     # Don't block server startup if logging binding fails
     pass
 
-# --- MCP transport auth (token) ---
-# If MR_DICE_MCP_TOKEN is set, we expose public endpoint `/mcp` that requires:
-#   - query param: ?token=...  (requested by some deployment platforms), OR
-#   - header: Authorization: Bearer ...
-#
-# Implementation detail: FastMCP's Streamable HTTP endpoint path is configurable.
-# When token auth is enabled, we mount the real MCP handler on an internal path
-# and expose `/mcp` as a proxy route that performs token validation first.
+# --- MCP transport: 统一经代理暴露 /mcp，便于有无 token 时都打请求入口日志 ---
+# 若 MR_DICE_MCP_TOKEN 已设置，代理还会做 token 校验（query ?token= 或 Authorization: Bearer）。
 MR_DICE_MCP_TOKEN = (os.getenv("MR_DICE_MCP_TOKEN") or "").strip()
+# 若反向代理把路径改写为 /（只转发到后端根路径），可在远端设置 MR_DICE_MCP_PUBLIC_PATH=/
 MR_DICE_MCP_PUBLIC_PATH = (os.getenv("MR_DICE_MCP_PUBLIC_PATH") or "/mcp").strip() or "/mcp"
 _internal_override = (os.getenv("MR_DICE_MCP_INTERNAL_PATH") or "").strip()
 if MR_DICE_MCP_TOKEN and not _internal_override:
-    # Generate an unguessable internal path so the public `/mcp` is the only practical entry.
     _h = hashlib.sha1(MR_DICE_MCP_TOKEN.encode("utf-8")).hexdigest()[:12]
     MR_DICE_MCP_INTERNAL_PATH = f"/__mrdice_mcp_{_h}"
 else:
     MR_DICE_MCP_INTERNAL_PATH = _internal_override or "/__mrdice_mcp"
 
+# 始终把 FastMCP 的 streamable HTTP 挂在内部路径，对外只暴露 MR_DICE_MCP_PUBLIC_PATH 的代理（统一打请求日志）
 mcp = CalculationMCPServer(
     "MrDiceServer",
     port=args.port,
     host=args.host,
-    streamable_http_path=(MR_DICE_MCP_INTERNAL_PATH if MR_DICE_MCP_TOKEN else MR_DICE_MCP_PUBLIC_PATH),
+    streamable_http_path=MR_DICE_MCP_INTERNAL_PATH,
 )
 
-if MR_DICE_MCP_TOKEN:
-    from mcp.server.fastmcp.server import StreamableHTTPASGIApp
+from mcp.server.fastmcp.server import StreamableHTTPASGIApp
 
-    class _TokenAuthStreamableHttpProxy:
-        """
-        ASGI endpoint mounted at MR_DICE_MCP_PUBLIC_PATH.
 
-        - Validates token from query param or Authorization header.
-        - Forwards request to FastMCP Streamable HTTP session manager.
-        """
+def _log_mcp_request(scope: Scope) -> None:
+    """收到 MCP 请求时打印一条日志（方法、路径、客户端）。"""
+    if scope.get("type") != "http":
+        return
+    method = (scope.get("method") or "").upper()
+    path = (scope.get("path") or "").strip() or "/"
+    client = scope.get("client")
+    client_str = f"{client[0]}:{client[1]}" if isinstance(client, (list, tuple)) and len(client) >= 2 else str(client)
+    logger.info("MCP 请求 | %s %s | 客户端: %s", method, path, client_str)
 
-        def __init__(self, token: str):
-            self._token = token
 
-        @staticmethod
-        def _extract_token(scope: Scope) -> str | None:
-            # 1) query param token=...
-            try:
-                qs = (scope.get("query_string") or b"").decode("utf-8", errors="ignore")
-                token = (parse_qs(qs).get("token") or [None])[0]
-                if token:
-                    return str(token)
-            except Exception:
-                pass
+class _MCPStreamableHttpProxy:
+    """
+    挂在 MR_DICE_MCP_PUBLIC_PATH 的代理：先打请求日志，可选做 token 校验，再转发到 FastMCP。
+    无 token 时仅打日志并转发；有 token 时校验后再转发。
+    """
 
-            # 2) Authorization: Bearer <token>
-            headers = scope.get("headers") or []
-            for k, v in headers:
-                if k.lower() == b"authorization":
-                    try:
-                        s = v.decode("utf-8", errors="ignore").strip()
-                    except Exception:
-                        s = ""
-                    if s.lower().startswith("bearer "):
-                        t = s[7:].strip()
-                        return t or None
-            return None
+    def __init__(self, token: str | None):
+        self._token = token
 
-        async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+    @staticmethod
+    def _extract_token(scope: Scope) -> str | None:
+        try:
+            qs = (scope.get("query_string") or b"").decode("utf-8", errors="ignore")
+            token = (parse_qs(qs).get("token") or [None])[0]
+            if token:
+                return str(token)
+        except Exception:
+            pass
+        headers = scope.get("headers") or []
+        for k, v in headers:
+            if k.lower() == b"authorization":
+                try:
+                    s = v.decode("utf-8", errors="ignore").strip()
+                except Exception:
+                    s = ""
+                if s.lower().startswith("bearer "):
+                    t = s[7:].strip()
+                    return t or None
+        return None
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        _log_mcp_request(scope)
+        if self._token is not None:
             token = self._extract_token(scope)
             if token != self._token:
                 body = json.dumps(
@@ -289,22 +292,18 @@ if MR_DICE_MCP_TOKEN:
                 )
                 await send({"type": "http.response.body", "body": body})
                 return
+        inner = StreamableHTTPASGIApp(mcp.mcp.session_manager)
+        await inner(scope, receive, send)
 
-            # FastMCP creates the session manager lazily when the streamable HTTP app is built.
-            # When we are called as a route inside that app, the session manager must exist.
-            inner = StreamableHTTPASGIApp(mcp.mcp.session_manager)
-            await inner(scope, receive, send)
 
-    # Mount proxy route (public path) after the internal MCP route.
-    # This route is only meaningful in streamable-http transport.
-    mcp.mcp._custom_starlette_routes.append(
-        Route(
-            MR_DICE_MCP_PUBLIC_PATH,
-            endpoint=_TokenAuthStreamableHttpProxy(MR_DICE_MCP_TOKEN),
-            methods=["GET", "POST", "OPTIONS"],
-            name="mcp_token_proxy",
-        )
+mcp.mcp._custom_starlette_routes.append(
+    Route(
+        MR_DICE_MCP_PUBLIC_PATH,
+        endpoint=_MCPStreamableHttpProxy(MR_DICE_MCP_TOKEN or None),
+        methods=["GET", "POST", "OPTIONS"],
+        name="mcp_public_proxy",
     )
+)
 
 # Keys whose values should be masked when printing env (e.g. API keys, secrets)
 _ENV_MASK_KEYS = frozenset({

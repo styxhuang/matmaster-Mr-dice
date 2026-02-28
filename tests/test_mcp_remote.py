@@ -5,7 +5,7 @@
   uv run python tests/test_mcp_remote.py --query "找一些 Fe2O3 材料" --n-results 3 --output-format cif
 
 它会读取项目根目录 `.env` 的：
-  - SERVER_URL                 (必需) 例如 http://host:50001/mcp
+  - SERVER_URL                 (必需) 例如 http://host:50001/mcp；若服务端返回 404，可尝试根路径 http://host:port/
   - MR_DICE_MCP_TOKEN           (可选) 若服务端开启 token 校验，将通过 Authorization: Bearer 传递
 """
 
@@ -15,7 +15,9 @@ import argparse
 import asyncio
 import json
 import os
+import sys
 import time
+import traceback
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -325,12 +327,32 @@ async def _run() -> int:
     except Exception as e:
         print("❌ MCP 连接/请求失败")
         print(f"SERVER_URL: {server_url}")
+
+        err_text = str(e).lower()
+        if "404" in err_text or "not found" in err_text:
+            print("  提示: 若服务端日志显示 POST /mcp 404，说明路径不匹配。")
+            print("  - 可尝试 SERVER_URL 改为根路径，例如: http://host:port/")
+            print("  - 或确认远端服务用同一代码、且未在反向代理中改写路径。")
+
+        def _print_exceptions(exc: BaseException, prefix: str = "  ") -> None:
+            if hasattr(exc, "exceptions") and getattr(exc, "exceptions"):
+                subs = getattr(exc, "exceptions")
+                for i, sub in enumerate(subs, 1):
+                    print(f"{prefix}[{i}] {type(sub).__name__}: {sub}")
+                    _print_exceptions(sub, prefix=prefix + "    ")
+            else:
+                # 叶子异常：可打印简短 traceback 便于排查
+                pass
+
         if hasattr(e, "exceptions") and getattr(e, "exceptions"):
-            # ExceptionGroup (Python 3.11+)
             for i, sub in enumerate(getattr(e, "exceptions"), 1):
                 print(f"  [{i}] {type(sub).__name__}: {sub}")
+                _print_exceptions(sub, prefix="      ")
         else:
-            print(f"{type(e).__name__}: {e}")
+            print(f"  {type(e).__name__}: {e}")
+
+        if os.getenv("MR_DICE_DEBUG"):
+            traceback.print_exc(file=sys.stderr)
         return 1
 
 
