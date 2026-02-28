@@ -239,6 +239,10 @@ def _log_mcp_request(scope: Scope) -> None:
     client = scope.get("client")
     client_str = f"{client[0]}:{client[1]}" if isinstance(client, (list, tuple)) and len(client) >= 2 else str(client)
     logger.info("MCP 请求 | %s %s | 客户端: %s", method, path, client_str)
+    logger.info("MCP环境变量: %s", os.getenv("BOHRIUM_ACCESS_KEY"))
+    logger.info("MCP环境变量: %s", os.getenv("BOHRIUM_PROJECT_ID"))
+    logger.info("MCP环境变量: %s", os.getenv("BOHRIUM_USER_ID"))
+    
 
 
 class _MCPStreamableHttpProxy:
