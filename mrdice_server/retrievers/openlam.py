@@ -1,6 +1,7 @@
 import json
 import logging
 import hashlib
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Any, Dict, List, Optional
 from .base import BaseRetriever
 from ..core.config import get_data_dir
 from ..models.schema import SearchResult
+from ..database.openlam_database.utils import set_bohrium_env
 
 
 def _import_openlam_utils():
@@ -74,6 +76,12 @@ class OpenlamRetriever(BaseRetriever):
         return self._CrystalStructure
 
     def fetch(self, filters: Dict[str, Any], n_results: int, output_format: str) -> List[SearchResult]:
+        # 使用与 CLI 一致的凭证注入：从环境变量写入，供 OpenLAM API 使用
+        set_bohrium_env(
+            access_key=os.getenv("BOHRIUM_ACCESS_KEY"),
+            project_id=os.getenv("BOHRIUM_PROJECT_ID"),
+            user_id=os.getenv("BOHRIUM_USER_ID"),
+        )
         utils = self._get_utils()
         normalize_formula = utils["normalize_formula"]
         save_structures_openlam = utils["save_structures_openlam"]

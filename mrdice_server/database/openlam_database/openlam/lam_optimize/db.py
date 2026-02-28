@@ -25,8 +25,13 @@ class CrystalStructure:
 
     @staticmethod
     def request_iterate(params: dict) -> dict:
-        # access_key = os.environ.get("BOHRIUM_ACCESS_KEY")
-        access_key = "477e3d9bd0c243249079da8a400148f6"
+        access_key = os.environ.get("BOHRIUM_ACCESS_KEY")
+        if not access_key:
+            raise RuntimeError(
+                "BOHRIUM_ACCESS_KEY is required for OpenLAM API. "
+                "Set it in environment or pass via openlam_cli (see scripts/openlam_cli.py). "
+                "Get your key from https://bohrium.dp.tech/settings/user"
+            )
         query_url = os.environ.get("OPENLAM_STRUCTURE_QUERY_URL", "http://openapi.dp.tech/openapi/v1/structures/iterate")
         headers = {
             "Content-type": "application/json",

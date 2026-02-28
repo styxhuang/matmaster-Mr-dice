@@ -1,7 +1,23 @@
 import json
+import os
 from pathlib import Path
 from typing import List, Optional, Literal
 from datetime import datetime, timezone
+
+
+def set_bohrium_env(
+    *,
+    access_key: Optional[str] = None,
+    project_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+) -> None:
+    """将 Bohrium 凭证写入环境变量，供 OpenLAM 等下游使用。MCP 与 CLI 共用。"""
+    if access_key is not None:
+        os.environ["BOHRIUM_ACCESS_KEY"] = access_key
+    if project_id is not None:
+        os.environ["BOHRIUM_PROJECT_ID"] = str(project_id)
+    if user_id is not None:
+        os.environ["BOHRIUM_USER_ID"] = str(user_id)
 
 
 # === OUTPUT TYPE ===
