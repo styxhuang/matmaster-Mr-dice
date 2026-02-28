@@ -232,10 +232,10 @@ from mcp.server.fastmcp.server import StreamableHTTPASGIApp
 
 def _log_mcp_request(scope: Scope=None) -> None:
     """收到 MCP 请求时打印一条日志（方法、路径、客户端）。"""
-    if scope.get("type") != "http":
-        return
-    
+  
     if scope is not None:
+        if scope.get("type") != "http":
+            return
         method = (scope.get("method") or "").upper()
         path = (scope.get("path") or "").strip() or "/"
         client = scope.get("client")
