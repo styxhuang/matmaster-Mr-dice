@@ -76,12 +76,17 @@ class OpenlamRetriever(BaseRetriever):
         return self._CrystalStructure
 
     def fetch(self, filters: Dict[str, Any], n_results: int, output_format: str) -> List[SearchResult]:
-        # 使用与 CLI 一致的凭证注入：从环境变量写入，供 OpenLAM API 使用
-        set_bohrium_env(
-            access_key=os.getenv("BOHRIUM_ACCESS_KEY"),
-            project_id=os.getenv("BOHRIUM_PROJECT_ID"),
-            user_id=os.getenv("BOHRIUM_USER_ID"),
+        # 使用与 CLI 一致的凭证注入：从环境变量读取并写入，供 OpenLAM API 使用
+        _ak = os.getenv("BOHRIUM_ACCESS_KEY")
+        _pid = os.getenv("BOHRIUM_PROJECT_ID")
+        _uid = os.getenv("BOHRIUM_USER_ID")
+        logging.info(
+            "[OpenLAM] fetch 入口 os.getenv: BOHRIUM_ACCESS_KEY=%s, BOHRIUM_PROJECT_ID=%s, BOHRIUM_USER_ID=%s",
+            "<set>" if _ak else "None/empty",
+            _pid or "None/empty",
+            _uid or "None/empty",
         )
+        set_bohrium_env(access_key=_ak, project_id=_pid, user_id=_uid)
         utils = self._get_utils()
         normalize_formula = utils["normalize_formula"]
         save_structures_openlam = utils["save_structures_openlam"]

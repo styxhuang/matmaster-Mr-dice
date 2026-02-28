@@ -26,6 +26,11 @@ class CrystalStructure:
     @staticmethod
     def request_iterate(params: dict) -> dict:
         access_key = os.environ.get("BOHRIUM_ACCESS_KEY")
+        import logging
+        logging.getLogger("mrdice").info(
+            "[OpenLAM] request_iterate: BOHRIUM_ACCESS_KEY in env=%s",
+            bool(access_key),
+        )
         if not access_key:
             raise RuntimeError(
                 "BOHRIUM_ACCESS_KEY is required for OpenLAM API. "

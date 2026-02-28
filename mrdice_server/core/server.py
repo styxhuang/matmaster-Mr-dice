@@ -481,6 +481,11 @@ async def fetch_structures_from_db(
         filters["elements"] = filters.get("elements") or []
 
     _log_bohrium_env()
+    _ak_env = os.environ.get("BOHRIUM_ACCESS_KEY")
+    logger.info(
+        "[OpenLAM] fetch_structures_from_db 即将搜索，当前进程 env: BOHRIUM_ACCESS_KEY=%s",
+        ("set(len=%d)" % len(_ak_env)) if _ak_env else "None/empty",
+    )
 
     # === SEARCH EXECUTION ===
     all_results: List[SearchResult] = []

@@ -5,6 +5,13 @@ from typing import List, Optional, Literal
 from datetime import datetime, timezone
 
 
+def _mask_key(s: Optional[str]) -> str:
+    """日志用：只显示是否非空及长度，不打印密钥内容。"""
+    if s is None or s == "":
+        return "None/empty"
+    return f"<set,len={len(s)}>"
+
+
 def set_bohrium_env(
     *,
     access_key: Optional[str] = None,
@@ -12,12 +19,24 @@ def set_bohrium_env(
     user_id: Optional[str] = None,
 ) -> None:
     """将 Bohrium 凭证写入环境变量，供 OpenLAM 等下游使用。MCP 与 CLI 共用。"""
+    import logging
+    _log = logging.getLogger("mrdice")
+    _log.info(
+        "[OpenLAM] set_bohrium_env 入参: access_key=%s, project_id=%s, user_id=%s",
+        _mask_key(access_key), project_id or "None", user_id or "None",
+    )
     if access_key is not None:
         os.environ["BOHRIUM_ACCESS_KEY"] = access_key
     if project_id is not None:
         os.environ["BOHRIUM_PROJECT_ID"] = str(project_id)
     if user_id is not None:
         os.environ["BOHRIUM_USER_ID"] = str(user_id)
+    _log.info(
+        "[OpenLAM] set_bohrium_env 后 env: BOHRIUM_ACCESS_KEY=%s, BOHRIUM_PROJECT_ID=%s, BOHRIUM_USER_ID=%s",
+        _mask_key(os.environ.get("BOHRIUM_ACCESS_KEY")),
+        os.environ.get("BOHRIUM_PROJECT_ID") or "None",
+        os.environ.get("BOHRIUM_USER_ID") or "None",
+    )
 
 
 # === OUTPUT TYPE ===
