@@ -230,18 +230,21 @@ mcp = CalculationMCPServer(
 from mcp.server.fastmcp.server import StreamableHTTPASGIApp
 
 
-def _log_mcp_request(scope: Scope) -> None:
+def _log_mcp_request(scope: Scope=None) -> None:
     """收到 MCP 请求时打印一条日志（方法、路径、客户端）。"""
     if scope.get("type") != "http":
         return
-    method = (scope.get("method") or "").upper()
-    path = (scope.get("path") or "").strip() or "/"
-    client = scope.get("client")
-    client_str = f"{client[0]}:{client[1]}" if isinstance(client, (list, tuple)) and len(client) >= 2 else str(client)
+    
+    if scope is not None:
+        method = (scope.get("method") or "").upper()
+        path = (scope.get("path") or "").strip() or "/"
+        client = scope.get("client")
+        client_str = f"{client[0]}:{client[1]}" if isinstance(client, (list, tuple)) and len(client) >= 2 else str(client)
+    
     logger.info("MCP 请求 | %s %s | 客户端: %s", method, path, client_str)
-    logger.info("MCP环境变量: %s", os.getenv("BOHRIUM_ACCESS_KEY"))
-    logger.info("MCP环境变量: %s", os.getenv("BOHRIUM_PROJECT_ID"))
-    logger.info("MCP环境变量: %s", os.getenv("BOHRIUM_USER_ID"))
+    logger.info("MCP环境变量AccessKey: %s", os.getenv("BOHRIUM_ACCESS_KEY"))
+    logger.info("MCP环境变量ProjectId: %s", os.getenv("BOHRIUM_PROJECT_ID"))
+    logger.info("MCP环境变量UserId: %s", os.getenv("BOHRIUM_USER_ID"))
     
 
 
@@ -476,6 +479,8 @@ async def fetch_structures_from_db(
             elements_options = None
     if elements_options:
         filters["elements"] = filters.get("elements") or []
+
+    _log_mcp_request()
 
     # === SEARCH EXECUTION ===
     all_results: List[SearchResult] = []
